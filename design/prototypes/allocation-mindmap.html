@@ -1,0 +1,1493 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>创建分账项目</title><link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"><style>.canvas{overflow:auto;min-height:360px;border:1px solid #e5e7eb;border-radius:.5rem;padding:12px}.tree ul{position:relative;padding-left:18px;margin-left:6px}.tree ul:before{content:"";position:absolute;top:0;bottom:0;left:8px;width:1px;background:#e5e7eb}.tree li{position:relative;margin:8px 0}.tree li:before{content:"";position:absolute;left:8px;top:14px;width:10px;height:1px;background:#e5e7eb}.node{background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;padding:8px;box-shadow:0 1px 2px rgba(0,0,0,.04);min-width:240px}.node.invalid{border-color:#ef4444}.node .ops button{padding:2px 6px}.drop{outline:2px dashed transparent}.drop.dragover{outline-color:#3b82f6}.palette-item{cursor:grab}
+/* Rule hint box sidebar */
+.rule-hint-box{position:sticky;top:12px;align-self:flex-start}
+/* Mindmap Preview Styles (vertical top-down) */
+.mindmap-container{position:relative;display:flex;flex-direction:column;align-items:center;padding:2rem;overflow:auto}.mindmap-central-node{position:relative;z-index:1;background:#111827;color:white;padding:.75rem 1.5rem;border-radius:9999px;font-weight:600;flex-shrink:0}.mindmap-branches{display:flex;flex-direction:row;align-items:flex-start;gap:1.5rem;margin-top:2rem}.mindmap-branch{display:flex;flex-direction:column;align-items:center;gap:1.5rem}.mindmap-node{position:relative;z-index:1;background:#f9fafb;border:1px solid #e5e7eb;padding:.5rem 1rem;border-radius:.5rem;white-space:nowrap;flex-shrink:0}.mindmap-children{display:flex;flex-direction:row;align-items:flex-start;gap:1.5rem}.mindmap-links{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+
+/* 底部固定按钮样式 */
+.bottom-action-buttons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  padding: 1rem;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  display: none;
+  justify-content: center;
+  gap: 1rem;
+  z-index: 100;
+}
+/* 审核模式样式 */
+body.review-mode .bottom-action-buttons {
+  display: flex;
+}
+</style>
+</head><body class="bg-gray-100 p-4"><div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6"><div class="flex items-center justify-between mb-4"><div><h1 id="pageTitle" class="text-2xl font-bold">创建分账项目</h1><p id="pageDescription" class="text-sm text-gray-500">拖拽账号到画布添加；节点间拖拽可变更父子关系；支持设置百分比/定额与优先级</p></div><div class="space-x-2">
+<!-- 普通模式下的按钮 -->
+<div id="normalModeButtons">
+  
+</div>
+</div></div><div class="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+    <div class="md:col-span-4 md:col-span-3">
+      <label class="text-sm text-gray-500">项目名称</label>
+      <input id="schemeName" class="mt-1 w-full border rounded px-3 py-2" placeholder="例如：10月渠道分账方案">
+    </div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+    <div class="md:col-span-4 md:col-span-3">
+      <label class="text-sm text-gray-500">分账规则</label>
+      <select id="ruleSelect" class="mt-1 w-full border rounded px-3 py-2">
+        <option value="">请选择分账规则</option>
+        <option value="default">默认规则</option>
+        <option value="priority">优先级分配</option>
+        <option value="ladder">阶梯分配</option>
+        <option value="mixed">混合规则</option>
+      </select>
+    </div>
+  </div>
+  <div class="mb-2 text-left space-x-2">
+    <button id="btnLedgerAdd" class="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded"><i class="fas fa-plus mr-1"></i>新增账目</button>
+    <button id="btnBatchEditTerminals" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">批量编辑终端</button>
+  </div>
+  <div>
+    <div class="overflow-auto border rounded">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="text-center px-3 py-2 w-10"><input type="checkbox" id="ledgerSelectAll"></th>
+            <th class="text-left px-3 py-2">账目名称</th>
+            <th class="text-left px-3 py-2">账目类型</th>
+            <th class="text-left px-3 py-2">营收时间</th>
+            <th class="text-left px-3 py-2">终端</th>
+            <th class="text-center px-3 py-2">操作</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerTableBody"></tbody>
+      </table>
+    </div>
+    <div id="ledgerEmptyHint" class="text-xs text-gray-500 mt-2">尚未添加账目</div>
+  </div>
+  <div class="text-xs text-gray-500">提示：每个父级的子项 百分比≤100%、定额≤账目总额</div>
+</div>
+<div id="editorView" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+  <div class="md:col-span-1 hidden">
+    <h3 class="text-lg font-medium mb-2">账号库（拖拽到右侧画布）</h3>
+    <input id="search" class="w-full border rounded px-2 py-1 mb-2" placeholder="搜索账号">
+    <div id="palette" class="space-y-2">
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">门店-杭州西湖</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">门店-深圳南山</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">渠道-抖音</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">渠道-线下POS</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">平台-服务费</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">代理-华东大区</div>
+    </div>
+  </div>
+  <div class="md:col-span-3">
+    <h3 class="text-lg font-medium mb-2">编辑分账账户</h3>
+    <!-- 顶部仅保留视图 Tab -->
+    <div class="flex items-start justify-start mb-2">
+      <div id="viewTabs" class="inline-flex rounded-lg border overflow-hidden">
+        <button id="tabEdit" class="px-3 py-1 bg-blue-500 text-white">编辑模式</button>
+        <button id="tabPreview" class="px-3 py-1">预览模式</button>
+      </div>
+    </div>
+    <!-- 主体改为左右两列：左侧编辑区，右侧规则提示（编辑模式显示，预览隐藏） -->
+    <!--
+     <div id="ruleHintBox" class="rule-hint-box w-80 bg-blue-50 border border-blue-200 rounded p-3 text-sm">
+        <div class="font-medium text-blue-700 mb-2">
+          <i class="fas fa-lightbulb mr-1"></i>规则提示
+        </div>
+    <!修改入口：下方列表为固定提示文案，直接编辑即可 -->
+        <!--<ul class="list-disc list-inside text-blue-700 space-y-1">
+          <li>父级可设置保证金；当前为展示用途，参与计算规则待确认。</li>
+          <li>子项分配：百分比合计≤100%，定额合计≤对应父级账目总额。</li>
+          <li>优先级数字越小越先分配；同级优先级按输入顺序参与。</li>
+          <li>切换“树状预览”可查看纵向连线与层次。</li>
+        </ul>
+      </div>
+    -->
+    <div class="md:flex gap-4">
+      <div class="flex-1 min-w-0">
+        <div id="canvas" class="canvas tree drop">
+          <ul id="root" class="drop"></ul>
+        </div>
+        <div id="summary" class="mt-3 text-sm"></div>
+        <div class="bg-yellow-50 border border-yellow-200 rounded p-3 mt-3">
+          <div class="flex items-center mb-1">
+            <i class="fas fa-info-circle text-yellow-600 mr-2"></i>
+            <span class="font-medium">校验结果</span>
+          </div>
+          <ul id="issues" class="list-disc list-inside text-yellow-700 text-sm"></ul>
+        </div>
+        <div id="preview" class="hidden p-4"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- 批量选择账目弹窗 -->
+<div id="accountPickerModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h4 class="text-lg font-medium">选择账目</h4>
+      <button id="accountPickerClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+    </div>
+    <input id="accountPickerSearch" class="w-full border rounded px-2 py-1 mb-2" placeholder="搜索账号">
+    <div id="accountPickerList" class="max-h-60 overflow-auto border rounded p-2 space-y-1"></div>
+    <div class="flex items-center justify-between mt-3">
+      <div class="space-x-2">
+        <button id="accountPickerSelectAll" class="text-blue-600 text-sm">全选</button>
+        <button id="accountPickerClear" class="text-gray-600 text-sm">清空</button>
+      </div>
+      <div class="space-x-2">
+        <button id="accountPickerCancel" class="px-3 py-1 bg-gray-200 rounded">取消</button>
+        <button id="accountPickerConfirm" class="px-3 py-1 bg-blue-600 text-white rounded">确定</button>
+      </div>
+    </div>
+  </div>
+</div></div></div></div>
+<!-- 新增账目选择弹窗（类型选择 + 表格 + 筛选） -->
+<div id="ledgerPickerModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-full max-w-3xl rounded-lg shadow-lg p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h4 class="text-lg font-medium">新增账目</h4>
+      <button id="ledgerPickerClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+    </div>
+    <!-- 类型选择 -->
+    <div class="mb-3 flex items-center gap-4">
+      <label class="inline-flex items-center"><input type="radio" name="ledgerType" value="product" class="ledger-type-radio"><span class="ml-2">商品</span></label>
+      <label class="inline-flex items-center"><input type="radio" name="ledgerType" value="combo" class="ledger-type-radio"><span class="ml-2">套餐</span></label>
+      <label class="inline-flex items-center"><input type="radio" name="ledgerType" value="machine" class="ledger-type-radio"><span class="ml-2">机台</span></label>
+      <label class="inline-flex items-center"><input type="radio" name="ledgerType" value="store" class="ledger-type-radio" checked><span class="ml-2">门店营收</span></label>
+    </div>
+    <!-- 筛选器（按类型动态渲染） -->
+    <div id="ledgerTypeFilters" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3"></div>
+    <!-- 表格 -->
+    <div class="border rounded overflow-hidden">
+      <table class="w-full text-sm">
+        <thead id="ledgerTypeTableHead"></thead>
+        <tbody id="ledgerTypeTableBody"></tbody>
+      </table>
+    </div>
+    <!-- 分页器 -->
+    <div id="ledgerTypePager" class="flex items-center justify-between mt-3 text-sm"></div>
+    <div class="flex items-center justify-between mt-3">
+      <div class="space-x-2">
+        <button id="ledgerPickerSelectAll" class="text-blue-600 text-sm">全选</button>
+        <button id="ledgerPickerClear" class="text-gray-600 text-sm">清空</button>
+      </div>
+      <div class="space-x-2">
+        <button id="ledgerPickerCancel" class="px-3 py-1 bg-gray-200 rounded">取消</button>
+        <button id="ledgerPickerConfirm" class="px-3 py-1 bg-blue-600 text-white rounded">添加</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- 终端选择弹窗（平铺列表 + 全选/清空） -->
+<div id="terminalPickerModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h4 class="text-lg font-medium">选择终端</h4>
+      <button id="terminalPickerClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="terminalPickerList" class="grid grid-cols-2 gap-2 max-h-60 overflow-auto border rounded p-2"></div>
+    <div class="flex items-center justify-between mt-3">
+      <div class="space-x-2">
+        <button id="terminalPickerSelectAll" class="text-blue-600 text-sm">全选</button>
+        <button id="terminalPickerClear" class="text-gray-600 text-sm">清空</button>
+      </div>
+      <div class="space-x-2">
+        <button id="terminalPickerCancel" class="px-3 py-1 bg-gray-200 rounded">取消</button>
+        <button id="terminalPickerConfirm" class="px-3 py-1 bg-blue-600 text-white rounded">确定</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>const scheme={name:'',rule:'',ledgerItems:[],currentLedgerId:null,nodes:{},roots:[]};let idSeq=1;const accountOptions=['账号一','账号二','账号三','账号四','账号五','门店-杭州西湖','门店-深圳南山','渠道-抖音','渠道-线下POS','平台-服务费','代理-华东大区'];
+// 可选择的终端列表
+const terminalOptions=['小程序','收银台#000001','收银台#000002','pos机#000001','pos机#000002'];
+const els={schemeName:document.getElementById('schemeName'),ruleSelect:document.getElementById('ruleSelect'),palette:document.getElementById('palette'),search:document.getElementById('search'),root:document.getElementById('root'),canvas:document.getElementById('canvas'),issues:document.getElementById('issues'),summary:document.getElementById('summary'),btnExport:document.getElementById('btnExport'),btnValidate:document.getElementById('btnValidate'),btnReset:document.getElementById('btnReset'),btnLedgerAdd:document.getElementById('btnLedgerAdd'),btnBatchEditTerminals:document.getElementById('btnBatchEditTerminals'),ledgerTableBody:document.getElementById('ledgerTableBody'),ledgerEmptyHint:document.getElementById('ledgerEmptyHint'),ruleHintBox:document.getElementById('ruleHintBox')};els.schemeName.oninput=()=>scheme.name=els.schemeName.value;if(els.ruleSelect){els.ruleSelect.onchange=()=>scheme.rule=els.ruleSelect.value;}els.search.oninput=()=>{const k=els.search.value.trim().toLowerCase();[...els.palette.children].forEach(x=>x.style.display=(k&& !x.textContent.toLowerCase().includes(k))?'none':'');};[...els.palette.children].forEach(item=>{item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain','palette:'+item.textContent.trim());});});let dragId=null;
+// 批量选择账目上下文与函数
+const pickContext={parentId:null};
+// 终端选择上下文
+const terminalPickContext={mode:'single',ledgerId:null,ledgerIds:[]};
+function openAccountPicker(targetParentId){pickContext.parentId=targetParentId||null;const modal=document.getElementById('accountPickerModal');const list=document.getElementById('accountPickerList');const search=document.getElementById('accountPickerSearch');
+  // 统计该父级（或根级）已有的账号，避免重复添加
+  const used=new Set();
+  if(pickContext.parentId){const p=scheme.nodes[pickContext.parentId];if(p){p.children.forEach(cid=>{const n=scheme.nodes[cid];if(n&&n.name) used.add(n.name);});}}
+  else{scheme.roots.forEach(rid=>{const n=scheme.nodes[rid];if(n&&n.name) used.add(n.name);});}
+  list.innerHTML = accountOptions.map(o=>{const dis=used.has(o);return `<label class="flex items-center justify-between px-2 py-1 rounded hover:bg-gray-50"><span class="text-sm">${o}${dis?'<span class=\"ml-2 text-xs text-gray-400\">(已存在)</span>':''}</span><input type="checkbox" class="account-pick" value="${o}" ${dis?'disabled':''}></label>`;}).join('');
+  search.value='';const filter=()=>{const k=search.value.trim().toLowerCase();[...list.children].forEach(el=>{const txt=el.querySelector('span').textContent.toLowerCase();el.style.display=(k && !txt.includes(k))?'none':'';});};search.oninput=filter;filter();modal.classList.remove('hidden');}
+function closeAccountPicker(){document.getElementById('accountPickerModal').classList.add('hidden');}
+function commitAddAccounts(){const list=document.getElementById('accountPickerList');const checks=list.querySelectorAll('input.account-pick:checked');const names=[...checks].map(c=>c.value);if(!names.length){closeAccountPicker();return;}names.forEach(n=>addNode(n,pickContext.parentId));render();validate();closeAccountPicker();}
+// 弹窗事件绑定
+(function(){const btnConfirm=document.getElementById('accountPickerConfirm');const btnCancel=document.getElementById('accountPickerCancel');const btnClose=document.getElementById('accountPickerClose');const btnAll=document.getElementById('accountPickerSelectAll');const btnClear=document.getElementById('accountPickerClear');if(btnConfirm){btnConfirm.onclick=commitAddAccounts;}if(btnCancel){btnCancel.onclick=closeAccountPicker;}if(btnClose){btnClose.onclick=closeAccountPicker;}if(btnAll){btnAll.onclick=()=>{const list=document.getElementById('accountPickerList');list.querySelectorAll('input.account-pick:not(:disabled)').forEach(c=>c.checked=true);};}if(btnClear){btnClear.onclick=()=>{const list=document.getElementById('accountPickerList');list.querySelectorAll('input.account-pick').forEach(c=>c.checked=false);};}})();
+// 终端选择弹窗：打开/关闭/确认
+function openTerminalPicker(ledgerId){
+  terminalPickContext.mode='single';
+  terminalPickContext.ledgerId = ledgerId;
+  terminalPickContext.ledgerIds = [];
+  const modal = document.getElementById('terminalPickerModal');
+  const list = document.getElementById('terminalPickerList');
+  const cur = scheme.ledgerItems.find(l=>l.id===ledgerId);
+  const selected = new Set(cur?.terminals || []);
+  list.innerHTML = terminalOptions.map(t=>
+    `<label class=\"inline-flex items-center px-2 py-1 border rounded\">
+       <input type=\"checkbox\" class=\"terminal-pick mr-2\" value=\"${t}\" ${selected.has(t)?'checked':''}>
+       <span class=\"text-sm\">${t}</span>
+     </label>`
+  ).join('');
+  modal.classList.remove('hidden');
+}
+function closeTerminalPicker(){
+  document.getElementById('terminalPickerModal')?.classList.add('hidden');
+}
+function commitTerminals(){
+  const checks = document.querySelectorAll('#terminalPickerList input.terminal-pick:checked');
+  const picked = [...checks].map(c=>c.value);
+  if(terminalPickContext.mode==='batch'){
+    (terminalPickContext.ledgerIds||[]).forEach(id=>{
+      const l=scheme.ledgerItems.find(x=>x.id===id);
+      if(l) l.terminals = picked.slice();
+    });
+  }else{
+    const ledgerId = terminalPickContext.ledgerId;
+    const cur = scheme.ledgerItems.find(l=>l.id===ledgerId);
+    if(cur){ cur.terminals = picked; }
+  }
+  renderLedgerTable();
+  closeTerminalPicker();
+}
+// 终端弹窗事件绑定
+(function(){
+  const btnC=document.getElementById('terminalPickerConfirm');
+  const btnX=document.getElementById('terminalPickerCancel');
+  const btnClose=document.getElementById('terminalPickerClose');
+  const btnAll=document.getElementById('terminalPickerSelectAll');
+  const btnClear=document.getElementById('terminalPickerClear');
+  if(btnC) btnC.onclick=commitTerminals;
+  if(btnX) btnX.onclick=closeTerminalPicker;
+  if(btnClose) btnClose.onclick=closeTerminalPicker;
+  if(btnAll) btnAll.onclick=()=>{
+    document.querySelectorAll('#terminalPickerList input.terminal-pick').forEach(c=>c.checked=true);
+  };
+  if(btnClear) btnClear.onclick=()=>{
+    document.querySelectorAll('#terminalPickerList input.terminal-pick').forEach(c=>c.checked=false);
+  };
+})();
+// 顶部“新增账目”按钮：打开账目选择弹窗（支持批量）
+/* 画布区域“新增账目”按钮已移除 */
+if(els.btnLedgerAdd){els.btnLedgerAdd.onclick=()=>openLedgerPicker();}
+// 批量编辑终端：打开弹窗，按勾选项批量设置
+if(els.btnBatchEditTerminals){
+  els.btnBatchEditTerminals.onclick=()=>{
+    const checks=document.querySelectorAll('#ledgerTableBody input.ledger-select:checked');
+    const ids=[...checks].map(c=>c.dataset.id);
+    if(!ids.length){ alert('请先在表格中勾选要批量编辑的分账项目'); return; }
+    terminalPickContext.mode='batch';
+    terminalPickContext.ledgerId=null;
+    terminalPickContext.ledgerIds=ids;
+    const modal=document.getElementById('terminalPickerModal');
+    const list=document.getElementById('terminalPickerList');
+    // 预选为“公共交集”
+    const common=ids.reduce((acc,id)=>{
+      const l=scheme.ledgerItems.find(x=>x.id===id);
+      const s=new Set(l?.terminals||[]);
+      if(acc==null) return s;
+      return new Set([...acc].filter(x=>s.has(x)));
+    }, null) || new Set();
+    list.innerHTML = terminalOptions.map(t=>
+      `<label class=\"inline-flex items-center px-2 py-1 border rounded\">
+         <input type=\"checkbox\" class=\"terminal-pick mr-2\" value=\"${t}\" ${common.has(t)?'checked':''}>
+         <span class=\"text-sm\">${t}</span>
+       </label>`
+    ).join('');
+    modal.classList.remove('hidden');
+  };
+}
+
+// 若从项目管理页进入（?from=pm），在顶部空容器插入“返回”按钮
+(function(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    if(params.get('from')==='pm'){
+      const container = document.getElementById('normalModeButtons');
+      if(container){
+        const backBtn = document.createElement('button');
+        backBtn.id = 'btnBackToPM';
+        backBtn.className = 'px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded';
+        backBtn.innerHTML = '<i class="fas fa-arrow-left mr-1"></i>返回';
+        backBtn.onclick = function(){
+          if(document.referrer && document.referrer.includes('project-create.html')){
+            history.back();
+          }else{
+            window.location.href = 'project-create.html';
+          }
+        };
+        container.appendChild(backBtn);
+      }
+    }
+  }catch(e){ /* no-op */ }
+})();
+
+// 新增账目弹窗：类型数据、渲染与事件
+const ledgerTypeLabels={product:'商品',combo:'套餐',machine:'机台',store:'门店营收'};
+// 示例数据（可替换为接口数据）
+const ledgerData={
+  store:[
+    {id:'S301',storeName:'门店-杭州西湖',city:'杭州'},
+    {id:'S302',storeName:'门店-深圳南山',city:'深圳'},
+    {id:'S303',storeName:'门店-上海浦东',city:'上海'},
+    {id:'S304',storeName:'门店-北京朝阳',city:'北京'}
+  ],
+  product:[
+    {id:'P001',name:'可乐',group:'饮料',tag:'畅销',source:'自营',price:3.5,stock:120},
+    {id:'P002',name:'薯片',group:'零食',tag:'新品',source:'联营',price:6.8,stock:80},
+    {id:'P003',name:'牙刷',group:'日用品',tag:'促销',source:'自营',price:12,stock:50},
+    {id:'P004',name:'矿泉水',group:'饮料',tag:'畅销',source:'自营',price:2.5,stock:300}
+  ],
+  combo:[
+    {id:'C101',name:'工作日午餐套餐',type:'午餐',source:'自营',group:'工作日',price:25},
+    {id:'C102',name:'双人下午茶',type:'下午茶',source:'联营',group:'双人',price:58},
+    {id:'C103',name:'儿童套餐',type:'儿童',source:'自营',group:'亲子',price:22}
+  ],
+  machine:[
+    {id:'M201',name:'售货机-一楼',serial:'VM-001',commId:'C-1001',modelName:'售货机'},
+    {id:'M202',name:'咖啡机-大堂',serial:'CF-101',commId:'C-2002',modelName:'咖啡机'},
+    {id:'M203',name:'娃娃机-A区',serial:'CL-777',commId:'C-3003',modelName:'夹娃娃机'}
+  ]
+};
+// 类型模式定义：筛选器与表格列
+const typeSchemas={
+  store:{
+    filters:[{key:'city',type:'select',label:'城市'}],
+    columns:[
+      {key:'storeName',title:'门店'},
+      {key:'city',title:'所在城市'}
+    ],
+    labelKey:'storeName'
+  },
+  product:{
+    filters:[
+      {key:'name',type:'input',placeholder:'商品名称'},
+      {key:'group',type:'select',label:'商品分组'},
+      {key:'tag',type:'select',label:'商品标签'},
+      {key:'source',type:'select',label:'来源'}
+    ],
+    columns:[
+      {key:'name',title:'商品名称'},
+      {key:'group',title:'商品分组'},
+      {key:'tag',title:'商品标签'},
+      {key:'price',title:'销售价'},
+      {key:'stock',title:'库存'}
+    ],
+    labelKey:'name'
+  },
+  combo:{
+    filters:[
+      {key:'type',type:'select',label:'套餐类型'},
+      {key:'name',type:'input',placeholder:'套餐名称'},
+      {key:'group',type:'select',label:'套餐分组'},
+      {key:'source',type:'select',label:'来源'}
+    ],
+    columns:[
+      {key:'name',title:'套餐名称'},
+      {key:'type',title:'套餐类型'},
+      {key:'source',title:'来源'},
+      {key:'group',title:'套餐分组'},
+      {key:'price',title:'售价'}
+    ],
+    labelKey:'name'
+  },
+  machine:{
+    filters:[
+      {key:'name',type:'input',placeholder:'机台名称'},
+      {key:'modelName',type:'select',label:'机种'},
+      {key:'serial',type:'input',placeholder:'机台编号'},
+      {key:'commId',type:'input',placeholder:'通讯ID'}
+    ],
+    columns:[
+      {key:'name',title:'机台名称'},
+      {key:'serial',title:'机台编号'},
+      {key:'commId',title:'通信ID'},
+      {key:'modelName',title:'机种名称'}
+    ],
+    labelKey:'name'
+  }
+};
+let ledgerSeq=1;
+let currentLedgerPickType='store';
+const filterState={};
+const pagerState={};
+const PAGE_SIZE=5;
+function addLedger(name){
+  if(scheme.ledgerItems.some(l=>l.name===name)) return;
+  const id='L'+(ledgerSeq++);
+  // 新增字段：ledgerType（定期/活期），默认定期；定期需要营收时间；终端选择列表
+  const today=new Date();
+  const defY=today.getFullYear();
+  const defM=today.getMonth()+1;
+  const defD=today.getDate();
+  scheme.ledgerItems.push({
+    id,
+    name,
+    total:0,
+    deposit:0,
+    ledgerType:'regular',
+    revenueStart:{y:defY,m:defM,d:defD},
+    revenueEnd:{y:defY,m:defM,d:defD},
+    terminals:[]
+  });
+  if(!scheme.currentLedgerId) scheme.currentLedgerId=id;
+}
+function getSelectOptions(type,key){
+  const list=ledgerData[type]||[];
+  return [...new Set(list.map(x=>x[key]).filter(v=>v!==undefined && v!==null && v!==''))];
+}
+function renderLedgerTypeFilters(){
+  const cont=document.getElementById('ledgerTypeFilters');
+  if(!cont) return;
+  const schema=typeSchemas[currentLedgerPickType];
+  filterState[currentLedgerPickType]=filterState[currentLedgerPickType]||{};
+  cont.innerHTML=schema.filters.map(f=>{
+    if(f.type==='input'){
+      const val=filterState[currentLedgerPickType][f.key]||'';
+      return `<div><input id="ledgerFilter_${f.key}" class="w-full border rounded px-2 py-1" placeholder="${f.placeholder||''}" value="${val}"></div>`;
+    } else {
+      const opts=getSelectOptions(currentLedgerPickType,f.key);
+      const val=filterState[currentLedgerPickType][f.key]||'';
+      return `<div><select id="ledgerFilter_${f.key}" class="w-full border rounded px-2 py-1"><option value="">全部${f.label||''}</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+    }
+  }).join('');
+  // bind events
+  typeSchemas[currentLedgerPickType].filters.forEach(f=>{
+    const el=document.getElementById(`ledgerFilter_${f.key}`);
+    if(!el) return;
+    const handler=()=>{filterState[currentLedgerPickType][f.key]=el.value; pagerState[currentLedgerPickType]=1; renderLedgerTypeTable();};
+    if(f.type==='input') el.oninput=handler; else el.onchange=handler;
+  });
+}
+function renderLedgerTypeTable(){
+  const thead=document.getElementById('ledgerTypeTableHead');
+  const tbody=document.getElementById('ledgerTypeTableBody');
+  if(!thead || !tbody) return;
+  const schema=typeSchemas[currentLedgerPickType];
+  // table head
+  thead.innerHTML=`<tr class="bg-gray-100">${schema.columns.map(c=>`<th class="text-left px-3 py-2">${c.title}</th>`).join('')}<th class="text-center px-3 py-2">选择</th></tr>`;
+  const used=new Set(scheme.ledgerItems.map(l=>l.name));
+  // filtering
+  const filters=filterState[currentLedgerPickType]||{};
+  let rows=(ledgerData[currentLedgerPickType]||[]).filter(x=>{
+    return Object.entries(filters).every(([k,v])=>{
+      if(!v) return true;
+      const val=(x[k]??'')+'';
+      if(typeSchemas[currentLedgerPickType].filters.find(f=>f.key===k && f.type==='select')){
+        return val===v;
+      }
+      return val.toLowerCase().includes((v+'').toLowerCase());
+    });
+  });
+  // pagination
+  const total=rows.length;
+  const totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  pagerState[currentLedgerPickType]=Math.min(Math.max(pagerState[currentLedgerPickType]||1,1),totalPages);
+  const page=pagerState[currentLedgerPickType];
+  const start=(page-1)*PAGE_SIZE;
+  const pageRows=rows.slice(start,start+PAGE_SIZE);
+  // body
+  tbody.innerHTML=pageRows.map(x=>{
+    const labelKey=schema.labelKey;
+    const disp=(x[labelKey]||x.name||'');
+    const label=ledgerTypeLabels[currentLedgerPickType]+ ' - ' + disp;
+    const dis=used.has(label);
+    const cols=schema.columns.map(c=>`<td class="px-3 py-2">${x[c.key]!==undefined?x[c.key]:''}</td>`).join('');
+    return `<tr class="border-t">${cols}<td class="px-3 py-2 text-center"><input type="checkbox" class="ledger-type-pick" value="${label}" ${dis?'disabled':''}></td></tr>`;
+  }).join('');
+  // pager
+  const pager=document.getElementById('ledgerTypePager');
+  if(pager){
+    const pageBtns=Array.from({length:totalPages},(_,i)=>{
+      const idx=i+1; const active=idx===page? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800';
+      return `<button class="px-2 py-1 rounded ${active}" data-page="${idx}">${idx}</button>`;
+    }).join(' ');
+    pager.innerHTML=`<div>共${total}条，每页${PAGE_SIZE}条</div><div class="space-x-2"><button id="pagerPrev" class="px-2 py-1 rounded bg-gray-100" ${page<=1?'disabled':''}>上一页</button>${pageBtns}<button id="pagerNext" class="px-2 py-1 rounded bg-gray-100" ${page>=totalPages?'disabled':''}>下一页</button></div>`;
+    const prev=document.getElementById('pagerPrev');
+    const next=document.getElementById('pagerNext');
+    if(prev) prev.onclick=()=>{pagerState[currentLedgerPickType]=Math.max(1,page-1); renderLedgerTypeTable();};
+    if(next) next.onclick=()=>{pagerState[currentLedgerPickType]=Math.min(totalPages,page+1); renderLedgerTypeTable();};
+    pager.querySelectorAll('button[data-page]').forEach(b=>{b.onclick=()=>{pagerState[currentLedgerPickType]=parseInt(b.getAttribute('data-page'),10)||1; renderLedgerTypeTable();};});
+  }
+}
+function openLedgerPicker(){
+  const modal=document.getElementById('ledgerPickerModal');
+  document.querySelectorAll('.ledger-type-radio').forEach(r=>{
+    r.checked = r.value===currentLedgerPickType;
+    r.onchange=()=>{currentLedgerPickType=r.value; filterState[currentLedgerPickType]={}; pagerState[currentLedgerPickType]=1; renderLedgerTypeFilters(); renderLedgerTypeTable();};
+  });
+  renderLedgerTypeFilters();
+  pagerState[currentLedgerPickType]=1;
+  renderLedgerTypeTable();
+  modal.classList.remove('hidden');
+}
+function closeLedgerPicker(){document.getElementById('ledgerPickerModal').classList.add('hidden');}
+function commitAddLedgers(){
+  const tbody=document.getElementById('ledgerTypeTableBody');
+  if(!tbody){closeLedgerPicker();return;}
+  const checks=tbody.querySelectorAll('input.ledger-type-pick:checked');
+  const names=[...checks].map(c=>c.value);
+  if(!names.length){closeLedgerPicker();return;}
+  names.forEach(n=>addLedger(n));
+  renderLedgerTable();
+  validate();
+  closeLedgerPicker();
+}
+// 事件绑定
+(function(){
+  const btnC=document.getElementById('ledgerPickerConfirm');
+  const btnX=document.getElementById('ledgerPickerCancel');
+  const btnClose=document.getElementById('ledgerPickerClose');
+  const btnAll=document.getElementById('ledgerPickerSelectAll');
+  const btnClear=document.getElementById('ledgerPickerClear');
+  if(btnC) btnC.onclick=commitAddLedgers;
+  if(btnX) btnX.onclick=closeLedgerPicker;
+  if(btnClose) btnClose.onclick=closeLedgerPicker;
+  if(btnAll) btnAll.onclick=()=>{
+    const tbody=document.getElementById('ledgerTypeTableBody');
+    tbody && tbody.querySelectorAll('input.ledger-type-pick:not(:disabled)').forEach(c=>c.checked=true);
+  };
+  if(btnClear) btnClear.onclick=()=>{
+    const tbody=document.getElementById('ledgerTypeTableBody');
+    tbody && tbody.querySelectorAll('input.ledger-type-pick').forEach(c=>c.checked=false);
+  };
+})();
+// 渲染账目表格
+function getCurrentTotal(){const cur=scheme.ledgerItems.find(l=>l.id===scheme.currentLedgerId);return cur?cur.total:0;}
+function getCurrentDeposit(){const cur=scheme.ledgerItems.find(l=>l.id===scheme.currentLedgerId);return cur?(cur.deposit||0):0;}
+function renderLedgerTable(){
+  const tbody=document.getElementById('ledgerTableBody');
+  const empty=document.getElementById('ledgerEmptyHint');
+  if(!tbody||!empty) return;
+  if(!scheme.ledgerItems.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
+  empty.classList.add('hidden');
+  // 确保每条账目具备营收起止日期字段（默认今天）
+  const today=new Date();
+  const defY=today.getFullYear();
+  const defM=today.getMonth()+1;
+  const defD=today.getDate();
+  scheme.ledgerItems.forEach(l=>{
+    // 兼容旧数据：补充账目类型与默认值
+    if(!l.ledgerType){ l.ledgerType='regular'; }
+    if(!Array.isArray(l.terminals)){ l.terminals=[]; }
+    if(!l.revenueStart) l.revenueStart={y:defY,m:defM,d:defD};
+    if(!l.revenueEnd) l.revenueEnd={y:defY,m:defM,d:defD};
+  });
+  const yearOpts=(from,to)=>Array.from({length:(to-from+1)},(_,i)=>from+i);
+  const monthOpts=Array.from({length:12},(_,i)=>i+1);
+  const dayOpts=Array.from({length:31},(_,i)=>i+1);
+  const optionsHTML=(arr,cur)=>arr.map(v=>`<option value="${v}" ${v===cur?'selected':''}>${v}</option>`).join('');
+  tbody.innerHTML=scheme.ledgerItems.map(l=>`
+    <tr data-id="${l.id}" class="border-t">
+      <td class="px-3 py-2 text-center"><input type="checkbox" class="ledger-select" data-id="${l.id}"></td>
+      <td class="px-3 py-2">${l.name}${scheme.currentLedgerId===l.id?'<span class="ml-2 text-xs text-blue-600">[当前]</span>':''}</td>
+      <td class="px-3 py-2">
+        <select class="border rounded px-2 py-1 ledger-type">
+          <option value="regular" ${l.ledgerType==='regular'?'selected':''}>定期账目</option>
+          <option value="current" ${l.ledgerType==='current'?'selected':''}>活期账目</option>
+        </select>
+      </td>
+      <td class="px-3 py-2 rev-time-cell">
+        <div class="flex items-center gap-2 rev-time-content" ${l.ledgerType==='current'?'style="display:none"':''}>
+          <div class="flex items-center gap-1">
+            <select class="border rounded px-1 py-1 rev-start-y">${optionsHTML(yearOpts(defY-5,defY+5), l.revenueStart.y)}</select>
+            <select class="border rounded px-1 py-1 rev-start-m">${optionsHTML(monthOpts, l.revenueStart.m)}</select>
+            <select class="border rounded px-1 py-1 rev-start-d">${optionsHTML(dayOpts, l.revenueStart.d)}</select>
+          </div>
+          <span>至</span>
+          <div class="flex items-center gap-1">
+            <select class="border rounded px-1 py-1 rev-end-y">${optionsHTML(yearOpts(defY-5,defY+5), l.revenueEnd.y)}</select>
+            <select class="border rounded px-1 py-1 rev-end-m">${optionsHTML(monthOpts, l.revenueEnd.m)}</select>
+            <select class="border rounded px-1 py-1 rev-end-d">${optionsHTML(dayOpts, l.revenueEnd.d)}</select>
+          </div>
+        </div>
+      </td>
+      <td class="px-3 py-2">
+        ${Array.isArray(l.terminals)&&l.terminals.length
+          ? (()=>{const full=l.terminals.join('、');return `<span class=\"truncate inline-block align-middle max-w-xs\" title=\"${full}\">${full}</span>`;})()
+          : '<span class="text-xs text-gray-400">未选择</span>'}
+      </td>
+      <td class="px-3 py-2 text-center space-x-2">
+        <button class="text-blue-600 edit-term">编辑终端</button>
+        <button class="text-red-600 delete-ledger">删除</button>
+      </td>
+    </tr>
+  `).join('');
+  const selectAllEl=document.getElementById('ledgerSelectAll');
+  const syncSelectAllState=()=>{
+    const checks=tbody.querySelectorAll('input.ledger-select');
+    const allChecked=(checks.length>0)&&[...checks].every(c=>c.checked);
+    if(selectAllEl) selectAllEl.checked=allChecked;
+  };
+  if(selectAllEl){
+    selectAllEl.onchange=()=>{
+      const checked=selectAllEl.checked;
+      tbody.querySelectorAll('input.ledger-select').forEach(c=>{c.checked=checked;});
+    };
+  }
+  // 事件绑定
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    const id=tr.dataset.id;
+    const l=scheme.ledgerItems.find(x=>x.id===id);
+    if(!l) return;
+    const rowChk=tr.querySelector('.ledger-select');
+    if(rowChk){
+      rowChk.onchange=()=>{syncSelectAllState();};
+    }
+    // 类型切换：定期显示营收时间，活期隐藏
+    const typeSel=tr.querySelector('.ledger-type');
+    const timeCell=tr.querySelector('.rev-time-cell');
+    const timeContent=tr.querySelector('.rev-time-content');
+    if(typeSel){
+      typeSel.onchange=()=>{
+        const v=typeSel.value==='current'?'current':'regular';
+        l.ledgerType=v;
+        if(timeContent){
+          timeContent.style.display = (v==='current') ? 'none' : '';
+        }
+      };
+    }
+    const bindSel=(cls,keyPath)=>{
+      const el=tr.querySelector(cls);
+      if(!el) return;
+      el.onchange=()=>{
+        const v=parseInt(el.value,10)||0;
+        const [target, key]=keyPath;
+        l[target][key]=v;
+      };
+    };
+    bindSel('.rev-start-y',['revenueStart','y']);
+    bindSel('.rev-start-m',['revenueStart','m']);
+    bindSel('.rev-start-d',['revenueStart','d']);
+    bindSel('.rev-end-y',['revenueEnd','y']);
+    bindSel('.rev-end-m',['revenueEnd','m']);
+    bindSel('.rev-end-d',['revenueEnd','d']);
+    const btnDel=tr.querySelector('.delete-ledger');
+    if(btnDel){
+      btnDel.onclick=()=>{
+        scheme.ledgerItems=scheme.ledgerItems.filter(x=>x.id!==id);
+        if(scheme.currentLedgerId===id){scheme.currentLedgerId=scheme.ledgerItems[0]?.id||null;}
+        renderLedgerTable();
+        validate();
+      };
+    }
+    const btnTerm=tr.querySelector('.edit-term');
+    if(btnTerm){
+      btnTerm.onclick=()=>openTerminalPicker(id);
+    }
+  });
+  syncSelectAllState();
+}
+// 节点操作相关函数（新增/改父级/删除）
+function addNode(name, parentId){
+  const id = 'N' + (idSeq++);
+  const node = {
+    id,
+    name: name || '',
+    parentId: parentId || null,
+    children: [],
+    allocs: [{ type: 'percent', value: 0, priority: 1 }],
+    deposit: 0,
+    collapsed: false
+  };
+  scheme.nodes[id] = node;
+  if(parentId){
+    const p = scheme.nodes[parentId];
+    if(p){
+      if(!Array.isArray(p.children)) p.children = [];
+      if(!p.children.includes(id)) p.children.push(id);
+    }
+  }else{
+    if(!scheme.roots.includes(id)) scheme.roots.push(id);
+  }
+  return id;
+}
+function reparent(id, newParentId){
+  const node = scheme.nodes[id];
+  if(!node) return;
+  const oldParentId = node.parentId;
+  // 从旧父级或根移除
+  if(oldParentId){
+    const op = scheme.nodes[oldParentId];
+    if(op && Array.isArray(op.children)){
+      op.children = op.children.filter(cid => cid !== id);
+    }
+  }else{
+    scheme.roots = scheme.roots.filter(rid => rid !== id);
+  }
+  // 加入新父级或根
+  node.parentId = newParentId || null;
+  if(newParentId){
+    const np = scheme.nodes[newParentId];
+    if(np){
+      if(!Array.isArray(np.children)) np.children = [];
+      if(!np.children.includes(id)) np.children.push(id);
+    }
+  }else{
+    if(!scheme.roots.includes(id)) scheme.roots.push(id);
+  }
+}
+function removeNode(id){
+  const node = scheme.nodes[id];
+  if(!node) return;
+  // 递归删除子节点
+  (node.children || []).slice().forEach(cid => removeNode(cid));
+  // 从父级或根移除自身
+  if(node.parentId){
+    const p = scheme.nodes[node.parentId];
+    if(p && Array.isArray(p.children)){
+      p.children = p.children.filter(cid => cid !== id);
+    }
+  }else{
+    scheme.roots = scheme.roots.filter(rid => rid !== id);
+  }
+  delete scheme.nodes[id];
+  // 重新渲染与校验
+  if(typeof render === 'function') render();
+  if(typeof validate === 'function') validate();
+}
+
+function nodeCard(node){
+  const li=document.createElement('li');
+  const card=document.createElement('div');
+  card.className='node drop';
+  card.draggable=true;
+  card.dataset.id = node.id; // 标记节点ID，便于校验高亮
+  // 拖拽事件
+  card.addEventListener('dragstart',e=>{dragId=node.id;e.dataTransfer.setData('text/plain','node:'+node.id);});
+  card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('dragover');});
+  card.addEventListener('dragleave',()=>card.classList.remove('dragover'));
+  card.addEventListener('drop',e=>{e.preventDefault();card.classList.remove('dragover');const dt=e.dataTransfer.getData('text/plain');if(dt.startsWith('palette:')){addNode(dt.slice(8),node.id);render();validate();}else if(dt.startsWith('node:')){const src=dt.slice(5);reparent(src,node.id);}});
+
+  // 账号选择
+  const name=document.createElement('select');
+  name.className='border rounded px-2 py-1 w-full mb-2';
+  name.innerHTML='<option value="">选择账号...</option>' + accountOptions.map(o=>`<option value="${o}">${o}</option>`).join('');
+  name.value=node.name;name.onchange=()=>{node.name=name.value;};
+
+  // 额度行容器（支持多条额度）
+  const allocWrap=document.createElement('div');
+  allocWrap.className='space-y-2';
+
+  function renderAllocRows(){
+    allocWrap.innerHTML='';
+    if(!Array.isArray(node.allocs) || node.allocs.length===0){ node.allocs=[{type:'percent',value:0,priority:1}]; }
+    node.allocs.forEach((a,idx)=>{
+      const row=document.createElement('div'); row.className='grid grid-cols-12 gap-2';
+      // 类型
+      const col1=document.createElement('div'); col1.className='col-span-3';
+      const type=document.createElement('select'); type.className='w-full border rounded px-2 py-1';
+      type.innerHTML='<option value="percent">百分比</option><option value="amount">定额</option>';
+      type.value=a.type;
+      // 值
+      const col2=document.createElement('div'); col2.className='col-span-4';
+      const val=document.createElement('input'); val.type='number'; val.step='0.01'; val.min='0'; val.className='w-full border rounded px-2 py-1';
+      val.placeholder=a.type==='percent'?'比例%':'金额¥'; val.value=a.value;
+  type.onchange=()=>{ a.type=type.value; val.placeholder=a.type==='percent'?'比例%':'金额¥'; validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+      col1.appendChild(type);
+  val.oninput=()=>{ a.value=parseFloat(val.value||0); validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+      col2.appendChild(val);
+      // 优先级
+      const col3=document.createElement('div'); col3.className='col-span-3';
+      const pri=document.createElement('input'); pri.type='number'; pri.step='1'; pri.min='1'; pri.className='w-full border rounded px-2 py-1';
+  pri.value=a.priority; pri.oninput=()=>{ a.priority=parseInt(pri.value||1); validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+      col3.appendChild(pri);
+      // 删除该额度
+      const col4=document.createElement('div'); col4.className='col-span-2 ops flex items-center justify-end space-x-1';
+      const bRemove=document.createElement('button'); bRemove.className='text-red-600'; bRemove.innerHTML='<i class="fas fa-trash"></i>'; bRemove.title='删除该额度';
+      bRemove.onclick=()=>{ if(node.allocs.length>1){ node.allocs.splice(idx,1); renderAllocRows(); validate(); } };
+      col4.appendChild(bRemove);
+
+      row.appendChild(col1); row.appendChild(col2); row.appendChild(col3); row.appendChild(col4);
+      allocWrap.appendChild(row);
+    });
+  }
+  renderAllocRows();
+
+  // 添加额度按钮
+  const addAlloc=document.createElement('button');
+  addAlloc.className='text-blue-600 mt-2';
+  addAlloc.innerHTML='<i class="fas fa-plus"></i> 添加额度';
+  addAlloc.title='为该账号增加一条额度设置';
+  addAlloc.onclick=()=>{
+    const nextPri=(node.allocs&&node.allocs.length)?Math.max(...node.allocs.map(x=>x.priority))+1:1;
+    node.allocs.push({type:'percent',value:0,priority:nextPri});
+    renderAllocRows();
+    validate();
+  };
+
+  // 节点操作
+  const ops=document.createElement('div');
+  ops.className='flex items-center justify-end space-x-2 mt-2';
+  const bSibling=document.createElement('button'); bSibling.className='text-blue-600'; bSibling.innerHTML='<i class="fas fa-sitemap"></i>'; bSibling.title='添加同级'; bSibling.onclick=()=>openAccountPicker(node.parentId);
+  const bAdd=document.createElement('button'); bAdd.className='text-blue-600'; bAdd.innerHTML='<i class="fas fa-plus"></i>'; bAdd.title='添加子节点'; bAdd.onclick=()=>openAccountPicker(node.id);
+  const bDel=document.createElement('button'); bDel.className='text-red-600'; bDel.innerHTML='<i class="fas fa-trash"></i>'; bDel.title='删除节点'; bDel.onclick=()=>removeNode(node.id);
+  const bCol=document.createElement('button'); bCol.className='text-gray-600'; bCol.innerHTML=node.collapsed?'<i class="fas fa-chevron-right"></i>':'<i class="fas fa-chevron-down"></i>'; bCol.title='折叠/展开'; bCol.onclick=()=>{ node.collapsed=!node.collapsed; render(); };
+  ops.appendChild(bSibling); ops.appendChild(bAdd); ops.appendChild(bDel); ops.appendChild(bCol);
+
+  card.appendChild(name);
+  // 保证金编辑
+  const depRow=document.createElement('div'); depRow.className='flex items-center justify-between mb-2';
+  const depLabel=document.createElement('span'); depLabel.className='text-gray-600 text-sm'; depLabel.textContent='保证金';
+  const depInput=document.createElement('input'); depInput.type='number'; depInput.step='0.01'; depInput.min='0'; depInput.className='border rounded px-2 py-1 w-32 text-right';
+  depInput.value=node.deposit||0;
+  depInput.oninput=()=>{ node.deposit=parseFloat(depInput.value||0); validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+  depRow.appendChild(depLabel); depRow.appendChild(depInput);
+  card.appendChild(depRow);
+  card.appendChild(allocWrap);
+  card.appendChild(addAlloc);
+  card.appendChild(ops);
+  li.appendChild(card);
+
+  if(!node.collapsed&&node.children.length){ const ul=document.createElement('ul'); node.children.forEach(cid=>{ ul.appendChild(nodeCard(scheme.nodes[cid])); }); li.appendChild(ul); }
+  return li;
+}
+function render(){els.root.innerHTML='';scheme.roots.forEach(id=>els.root.appendChild(nodeCard(scheme.nodes[id])));}function validate(){
+  const issues=[]; const ps={}; const am={};
+  Object.values(scheme.nodes).forEach(n=>{
+    const p=n.parentId||'ROOT';
+    const allocs=n.allocs||[];
+    allocs.forEach(a=>{
+      if(a.type==='percent'){
+        ps[p]=(ps[p]||0)+(a.value||0);
+      }else if(a.type==='amount'){
+        am[p]=(am[p]||0)+(a.value||0);
+      }
+    });
+  });
+
+  // 清理旧的高亮
+  Object.values(scheme.nodes).forEach(n=>{
+    const card=document.querySelector('.node[data-id="'+n.id+'"]');
+    if(card){ card.classList.remove('invalid'); }
+  });
+
+  const curTotal=getCurrentTotal();
+
+  // 百分比与定额校验，累加问题列表
+  Object.keys(ps).forEach(pid=>{
+    if(ps[pid]>100){
+      const nm=pid==='ROOT'?'根级':scheme.nodes[pid]?.name||pid;
+      issues.push(nm+' 子项百分比合计超过100% ('+ps[pid].toFixed(2)+'%)');
+    }
+  });
+  Object.keys(am).forEach(pid=>{
+    if(curTotal && am[pid]>curTotal){
+      const nm=pid==='ROOT'?'根级':scheme.nodes[pid]?.name||pid;
+      issues.push(nm+' 子项定额合计超过账目总额 (¥ '+am[pid].toFixed(2)+' > ¥ '+curTotal+')');
+    }
+  });
+
+  // 高亮异常父级下的子节点
+  Object.keys(ps).forEach(pid=>{
+    const overP = ps[pid] > 100;
+    const overA = curTotal && am[pid] > curTotal;
+    if(overP || overA){
+      const children = pid==='ROOT' ? scheme.roots : (scheme.nodes[pid]?.children || []);
+      children.forEach(cid=>{
+        const card = document.querySelector('.node[data-id="'+cid+'"]');
+        if(card){ card.classList.add('invalid'); }
+      });
+    }
+  });
+
+  els.issues.innerHTML=issues.length?issues.map(i=>'<li>'+i+'</li>').join(''):'<li>未发现问题</li>';
+
+  // 汇总展示
+  const lines=[];
+  Object.keys(ps).forEach(pid=>{
+    const nm=pid==='ROOT'?'根级':scheme.nodes[pid]?.name||pid;
+    const pV = (ps[pid]||0); const aV = (am[pid]||0);
+lines.push('<div><span class="font-medium">'+nm+'</span>：保 <span class="text-gray-700">¥ '+(pid==='ROOT'?getCurrentDeposit():((scheme.nodes[pid]?.deposit)||0)).toFixed(2)+'</span> ，比例合计 <span class="'+(pV>100?'text-red-600':'text-green-600')+'">'+pV.toFixed(2)+'%</span> ，定额合计 <span class="'+(curTotal&&aV>curTotal?'text-red-600':'text-green-600')+'">¥ '+aV.toFixed(2)+'</span></div>');
+  });
+  els.summary.innerHTML=lines.join('');
+}els.canvas.addEventListener('dragover',e=>{e.preventDefault();els.canvas.classList.add('dragover');});els.canvas.addEventListener('dragleave',()=>els.canvas.classList.remove('dragover'));els.canvas.addEventListener('drop',e=>{e.preventDefault();els.canvas.classList.remove('dragover');const dt=e.dataTransfer.getData('text/plain');if(dt.startsWith('palette:')){addNode(dt.slice(8),null);render();validate();}else if(dt.startsWith('node:')){reparent(dt.slice(5),null);}});
+// 导出：匹配当前数据结构（ledgerItems/currentLedgerId）
+if(els.btnExport){els.btnExport.onclick=()=>{
+  const data={
+    name:scheme.name,
+    ledgerItems:scheme.ledgerItems,
+    currentLedgerId:scheme.currentLedgerId,
+    nodes:scheme.nodes,
+    roots:scheme.roots
+  };
+  const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=(scheme.name||'allocation-mindmap')+'.json';a.click();
+};}
+if(els.btnValidate){els.btnValidate.onclick=validate;}
+// 重置：清空当前方案与账目，避免引用已移除的 els.ledger/els.total
+if(els.btnReset){els.btnReset.onclick=()=>{
+  if(!confirm('确认清空当前画布吗？'))return;
+  scheme.name='';
+  scheme.nodes={};
+  scheme.roots=[];
+  scheme.ledgerItems=[];
+  scheme.currentLedgerId=null;
+  if(els.schemeName) els.schemeName.value='';
+  renderLedgerTable();
+  render();
+  validate();
+};}
+['渠道-抖音','门店-杭州西湖','平台-服务费'].forEach((n,i)=>{const id=addNode(n,null);if(i===2){reparent(id,scheme.roots[0]);}});render();validate();
+const tabEdit=document.getElementById('tabEdit');
+const tabPreview=document.getElementById('tabPreview');
+const editorView=document.getElementById('editorView');
+// 避免与后续模块中的同名变量冲突，使用 let 并改名
+let previewEl = document.getElementById('preview');
+function nodeLabel(n){const allocs=(n.allocs||[]).slice().sort((a,b)=>a.priority-b.priority);const labels=allocs.map(a=>a.type==='percent'?`P${a.priority}:${a.value}%`:`P${a.priority}:¥ ${a.value}`).join('；');const dep=(n.deposit||0);const prefix=dep>0?`保:¥ ${dep}；`:'';return n.name?`${n.name} · ${prefix}${labels||'未设额度'}`:`(未选择账号) · ${prefix}${labels||'未设额度'}`;}
+function previewBranchHTML(id){
+  const n=scheme.nodes[id];
+  const box=`<div class="mindmap-node">${nodeLabel(n)}</div>`;
+  if(n.children&&n.children.length){
+    const childrenHTML=n.children.map(c=>previewBranchHTML(c)).join('');
+    return `<div class="mindmap-branch">${box}<div class="mindmap-children">${childrenHTML}</div></div>`;
+  }
+  return `<div class="mindmap-branch">${box}</div>`;
+}
+function renderPreview(){
+  const curLedger=scheme.ledgerItems.find(l=>l.id===scheme.currentLedgerId);
+  const central=scheme.name?scheme.name:'未命名方案';
+  const ledgerBadge = curLedger
+    ? `<div class="bg-blue-600 text-white rounded-xl px-5 py-2 text-sm">账目：${curLedger.name} · 总额：¥ ${curLedger.total} · 保证金：¥ ${(curLedger.deposit||0)} · 可用：¥ ${(curLedger.total - (curLedger.deposit||0)).toFixed(2)}</div>`
+    : `<div class="bg-gray-200 text-gray-700 rounded-xl px-5 py-2 text-sm">未选择当前账目</div>`;
+  const branches=scheme.roots.map(previewBranchHTML).join('') || '<div class="text-gray-500 text-sm">当前暂无节点，请在编辑模式添加账号节点后再查看预览。</div>';
+  previewEl.innerHTML=`
+    <div class="space-y-3">
+      ${ledgerBadge}
+      <div class="mindmap-container">
+        <svg class="mindmap-links"></svg>
+        <div class="mindmap-central-node">${central}</div>
+        <div class="mindmap-branches">${branches}</div>
+      </div>
+    </div>
+  `;
+  // 预览渲染完成后绘制连接线
+  requestAnimationFrame(()=>drawMindmapLinks());
+}
+function switchTab(tab){
+  if(!previewEl) return;
+  const issuesBlock = els.issues ? els.issues.parentElement : null;
+  if(tab==='edit'){
+    // 显示编辑区，隐藏预览区
+    previewEl.classList.add('hidden');
+    els.canvas?.classList.remove('hidden');
+    els.summary?.classList.remove('hidden');
+    issuesBlock?.classList.remove('hidden');
+    els.ruleHintBox?.classList.remove('hidden');
+    // Tab样式高亮
+    tabEdit?.classList.add('bg-blue-500','text-white');
+    tabPreview?.classList.remove('bg-blue-500','text-white');
+  }else{
+    // 显示树状预览，隐藏编辑区的画布与校验块
+    renderPreview();
+    previewEl.classList.remove('hidden');
+    els.canvas?.classList.add('hidden');
+    els.summary?.classList.add('hidden');
+    issuesBlock?.classList.add('hidden');
+    els.ruleHintBox?.classList.add('hidden');
+    // Tab样式高亮
+    tabPreview?.classList.add('bg-blue-500','text-white');
+    tabEdit?.classList.remove('bg-blue-500','text-white');
+  }
+}
+if(tabEdit&&tabPreview){tabEdit.onclick=()=>switchTab('edit');tabPreview.onclick=()=>switchTab('preview');}
+
+// 绘制思维导图连接线（中心->一级分支，父->子）
+function drawMindmapLinks(){
+  const preview = document.getElementById('preview');
+  if(!preview) return;
+  const container = preview.querySelector('.mindmap-container');
+  if(!container) return;
+  const svg = container.querySelector('.mindmap-links') || (function(){
+    const s = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    s.classList.add('mindmap-links');
+    container.appendChild(s);
+    return s;
+  })();
+  // 清空旧线条
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const contRect = container.getBoundingClientRect();
+  // 适配滚动区域：使用 scrollWidth/scrollHeight 设置 SVG 尺寸
+  svg.setAttribute('width', container.scrollWidth);
+  svg.setAttribute('height', container.scrollHeight);
+  svg.style.width = container.scrollWidth + 'px';
+  svg.style.height = container.scrollHeight + 'px';
+
+  const central = container.querySelector('.mindmap-central-node');
+  const firstLevelNodes = container.querySelectorAll('.mindmap-branches > .mindmap-branch > .mindmap-node');
+  // 中心节点 -> 一级分支
+  if(central){
+    firstLevelNodes.forEach(n => addLink(svg, central, n, contRect));
+  }
+  // 各分支父子之间连线
+  container.querySelectorAll('.mindmap-branch').forEach(branch => {
+    const fromNode = branch.querySelector(':scope > .mindmap-node');
+    const childrenNodes = branch.querySelectorAll(':scope > .mindmap-children > .mindmap-branch > .mindmap-node');
+    childrenNodes.forEach(child => addLink(svg, fromNode, child, contRect));
+  });
+}
+function addLink(svg, fromEl, toEl, contRect){
+  if(!fromEl || !toEl) return;
+  const fr = fromEl.getBoundingClientRect();
+  const tr = toEl.getBoundingClientRect();
+  // 纵向连线：父节点底部中心 -> 子节点顶部中心
+  const x1 = fr.left + fr.width/2 - contRect.left;
+  const y1 = fr.bottom - contRect.top;
+  const x2 = tr.left + tr.width/2 - contRect.left;
+  const y2 = tr.top - contRect.top;
+  const c1x = x1; // 控制点：向下偏移
+  const c1y = y1 + 40;
+  const c2x = x2; // 控制点：向上偏移
+  const c2y = y2 - 40;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', '#d1d5db');
+  path.setAttribute('stroke-width', '2');
+  svg.appendChild(path);
+}
+// 在窗口尺寸变化时重绘连线（仅预览可见时）
+window.addEventListener('resize', () => {
+  const preview = document.getElementById('preview');
+  if(preview && !preview.classList.contains('hidden')){
+    drawMindmapLinks();
+  }
+});
+// --- View 接入（非侵入式）：集中配置 + 视图应用，便于新手修改参数 ---
+// 说明：如需停用此接入，删除下方 <script type="module"> 块即可。
+</script>
+
+<!-- 右下角浮动操作按钮 -->
+<div id="floatingActions" class="fixed bottom-6 right-6 flex gap-2 z-50">
+  <button id="btnSaveBottom" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow">
+    <i class="fas fa-save mr-1"></i>保存
+  </button>
+  <button id="btnCancelBottom" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded shadow">
+    取消
+  </button>
+</div>
+
+<script>
+function clearSchemeAll(){
+  // 一键清空页面设置（不刷新页面）
+  scheme.name = '';
+  scheme.ledgerItems = [];
+  scheme.currentLedgerId = null;
+  scheme.nodes = {};
+  scheme.roots = [];
+  idSeq = 1;
+  // 清空输入框与视图
+  const nameInput = document.getElementById('schemeName');
+  if (nameInput) nameInput.value = '';
+  if (typeof renderLedgerTable === 'function') renderLedgerTable();
+  if (typeof render === 'function') render();
+  if (typeof validate === 'function') validate();
+  // 关闭可能打开的弹窗
+  ['accountPickerModal','ledgerPickerModal'].forEach(id=>{const m=document.getElementById(id);if(m) m.classList.add('hidden');});
+  alert('已清空当前页面设置');
+}
+// 显示提示信息
+function showToast(message, type = 'info') {
+    // 创建toast元素
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 px-4 py-2 rounded shadow-lg z-50 ${
+        type === 'error' ? 'bg-red-500 text-white' : 
+        type === 'success' ? 'bg-green-500 text-white' : 
+        'bg-blue-500 text-white'
+    }`;
+    toast.textContent = message;
+    
+    // 添加到页面
+    document.body.appendChild(toast);
+    
+    // 3秒后自动消失
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 500);
+    }, 3000);
+}
+function saveSchemeToLocal(){
+  try {
+    // 先保存方案快照
+    localStorage.setItem('allocation_scheme', JSON.stringify(scheme));
+    // 生成项目记录并写入本地列表
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const projectId = `PRJ-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    let list = [];
+    try{ list = JSON.parse(localStorage.getItem('allocation_projects')||'[]')||[]; }catch(e){ list = []; }
+    list.push({
+      id: projectId,
+      name: scheme.name || '未命名方案',
+      creator: '当前用户',
+      created: stamp,
+      status: '项目待审核',
+      scheme: JSON.parse(JSON.stringify(scheme))
+    });
+    localStorage.setItem('allocation_projects', JSON.stringify(list));
+    showToast('已保存项目并返回项目创建页', 'success');
+    setTimeout(()=>{ window.location.href = 'project-create.html'; }, 800);
+  } catch (err) {
+    console.error('保存失败：', err);
+    showToast('保存失败，请重试', 'error');
+  }
+}
+
+// 验证并保存方案
+function validateAndSave() {
+    // 检查方案名称是否填写
+    const schemeName = document.getElementById('schemeName').value.trim();
+    if (!schemeName) {
+        showToast('请填写方案名称', 'error');
+        document.getElementById('schemeName').focus();
+        return;
+    }
+    
+    // 检查是否有账目
+    if (!scheme.ledgerItems || scheme.ledgerItems.length === 0) {
+        showToast('请至少添加一个账目', 'error');
+        return;
+    }
+    
+    // 检查是否有分账节点
+    if (!scheme.roots || scheme.roots.length === 0) {
+        showToast('请至少添加一个分账节点', 'error');
+        return;
+    }
+    
+    // 执行校验
+    validateAllocation();
+    
+    // 检查校验问题
+    const issueList = document.getElementById('issues');
+    const hasIssues = issueList && issueList.children.length > 0 && 
+                     !issueList.textContent.includes('未发现问题');
+    
+    if (hasIssues) {
+        if(!confirm('当前方案存在校验问题，确定要保存吗？')) {
+            return;
+        }
+    }
+    
+    // 保存方案
+    saveSchemeToLocal();
+}
+
+// 审核通过
+function approveProject() {
+  const projectId = new URLSearchParams(window.location.search).get('projectId');
+  if (!projectId) {
+    showToast('项目ID不存在', 'error');
+    return;
+  }
+  
+  if (confirm('确定审核通过该项目吗？')) {
+    // 这里可以添加向服务器提交审核结果的代码
+    showToast('审核通过成功', 'success');
+    // 跳转回项目列表页面，并传递状态参数
+    setTimeout(() => {
+      window.location.href = `project_management_rewrite.html?status=approved&projectId=${projectId}`;
+    }, 1500);
+  }
+}
+
+// 驳回项目
+function rejectProject() {
+  const projectId = new URLSearchParams(window.location.search).get('projectId');
+  if (!projectId) {
+    showToast('项目ID不存在', 'error');
+    return;
+  }
+  
+  const reason = prompt('请输入驳回原因：');
+  if (reason !== null) {
+    // 这里可以添加向服务器提交驳回结果的代码
+    showToast('已驳回该项目', 'success');
+    // 跳转回项目列表页面，并传递状态参数
+    setTimeout(() => {
+      window.location.href = `project_management_rewrite.html?status=rejected&projectId=${projectId}`;
+    }, 1500);
+  }
+}
+
+// 切换编辑模式
+function toggleEditMode() {
+  const btnEditBottom = document.getElementById('btnEditBottom');
+  if (btnEditBottom.textContent.includes('编辑')) {
+    enableEditing();
+    btnEditBottom.innerHTML = '<i class="fas fa-eye mr-1"></i>预览';
+  } else {
+    disableEditing();
+    btnEditBottom.innerHTML = '<i class="fas fa-edit mr-1"></i>编辑';
+  }
+}
+
+// 启用编辑
+function enableEditing() {
+  // 启用所有输入框、选择框和按钮
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    el.disabled = false;
+  });
+  
+  // 启用普通模式下的按钮
+  document.querySelectorAll('#normalModeButtons button').forEach(btn => {
+    btn.disabled = false;
+  });
+  
+  // 启用拖拽功能
+  document.querySelectorAll('.palette-item').forEach(item => {
+    item.setAttribute('draggable', 'true');
+  });
+  
+  // 启用节点操作按钮
+  document.querySelectorAll('.node .ops button').forEach(btn => {
+    btn.disabled = false;
+  });
+  
+  // 启用账目表格中的按钮
+  document.querySelectorAll('#ledgerTableBody button').forEach(btn => {
+    btn.disabled = false;
+  });
+  
+  // 启用新增账目按钮
+  const btnLedgerAdd = document.getElementById('btnLedgerAdd');
+  if (btnLedgerAdd) btnLedgerAdd.disabled = false;
+  
+  showToast('已启用编辑模式', 'info');
+}
+
+// 禁用编辑
+function disableEditing() {
+  // 禁用所有输入框、选择框和按钮
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    el.disabled = true;
+  });
+  
+  // 禁用普通模式下的按钮
+  document.querySelectorAll('#normalModeButtons button').forEach(btn => {
+    btn.disabled = true;
+  });
+  
+  // 禁用拖拽功能
+  document.querySelectorAll('.palette-item').forEach(item => {
+    item.setAttribute('draggable', 'false');
+  });
+  
+  showToast('已禁用编辑模式', 'info');
+}
+
+// 绑定按钮事件
+(function(){
+  const btnSaveBottom = document.getElementById('btnSaveBottom');
+  const btnCancelBottom = document.getElementById('btnCancelBottom');
+  const btnApproveBottom = document.getElementById('btnApproveBottom');
+  const btnRejectBottom = document.getElementById('btnRejectBottom');
+  const btnEditBottom = document.getElementById('btnEditBottom');
+  const btnBackBottom = document.getElementById('btnBackBottom');
+  const bottomActionButtons = document.getElementById('bottomActionButtons');
+  
+  // 获取URL参数
+  const urlParams = new URLSearchParams(window.location.search);
+  const mode = urlParams.get('mode');
+  const projectId = urlParams.get('projectId');
+  
+  // 判断是否为审核模式
+  if (mode === 'review' && projectId) {
+    // 更新页面标题和描述
+    const pageTitle = document.getElementById('pageTitle');
+    const pageDescription = document.getElementById('pageDescription');
+    if (pageTitle) pageTitle.textContent = '审核分账项目';
+    if (pageDescription) pageDescription.textContent = '审核项目内容，点击编辑按钮可修改内容';
+    
+    // 显示底部审核按钮
+    if (bottomActionButtons) bottomActionButtons.style.display = 'flex';
+    
+    // 绑定审核按钮事件
+    if (btnApproveBottom) btnApproveBottom.onclick = approveProject;
+    if (btnRejectBottom) btnRejectBottom.onclick = rejectProject;
+    if (btnEditBottom) btnEditBottom.onclick = toggleEditMode;
+    if (btnBackBottom) btnBackBottom.onclick = () => window.location.href = 'project-create.html';
+    
+    // 默认禁用编辑
+    disableEditing();
+    
+    // 添加审核模式类
+    document.body.classList.add('review-mode');
+    
+    
+    try{
+      const list = JSON.parse(localStorage.getItem('allocation_projects')||'[]')||[];
+      const proj = list.find(p=>p.id===projectId);
+      if(proj && proj.scheme){
+        Object.assign(scheme, proj.scheme);
+        const nameInput = document.getElementById('schemeName');
+        if(nameInput) nameInput.value = scheme.name || '';
+        if (typeof renderLedgerTable === 'function') renderLedgerTable();
+        if (typeof render === 'function') render();
+        if (typeof validate === 'function') validate();
+      }
+    }catch(e){}
+  }
+  
+  // 普通模式下的按钮事件
+  if (btnSaveBottom) btnSaveBottom.onclick = validateAndSave;
+  if (btnCancelBottom) btnCancelBottom.onclick = clearSchemeAll;
+})();
+
+function renderPreview(){
+  const curLedger=scheme.ledgerItems.find(l=>l.id===scheme.currentLedgerId);
+  const central=scheme.name?scheme.name:'未命名方案';
+  const ledgerBadge = curLedger
+    ? `<div class="bg-blue-600 text-white rounded-xl px-5 py-2 text-sm">账目：${curLedger.name} · 总额：¥ ${curLedger.total} · 保证金：¥ ${(curLedger.deposit||0)} · 可用：¥ ${(curLedger.total - (curLedger.deposit||0)).toFixed(2)}</div>`
+    : `<div class="bg-gray-200 text-gray-700 rounded-xl px-5 py-2 text-sm">未选择当前账目</div>`;
+  const branches=scheme.roots.map(previewBranchHTML).join('') || '<div class="text-gray-500 text-sm">当前暂无节点，请在编辑模式添加账号节点后再查看预览。</div>';
+  previewEl.innerHTML=`
+    <div class="space-y-3">
+      ${ledgerBadge}
+      <div class="mindmap-container">
+        <svg class="mindmap-links"></svg>
+        <div class="mindmap-central-node">${central}</div>
+        <div class="mindmap-branches">${branches}</div>
+      </div>
+    </div>
+  `;
+  // 预览渲染完成后绘制连接线
+  requestAnimationFrame(()=>drawMindmapLinks());
+}
+
+
+function switchTab(tab){
+  if(!previewEl) return;
+  const issuesBlock = els.issues ? els.issues.parentElement : null;
+  if(tab==='edit'){
+    // 显示编辑区，隐藏预览区
+    previewEl.classList.add('hidden');
+    els.canvas?.classList.remove('hidden');
+    els.summary?.classList.remove('hidden');
+    issuesBlock?.classList.remove('hidden');
+    els.ruleHintBox?.classList.remove('hidden');
+    // Tab样式高亮
+    tabEdit?.classList.add('bg-blue-500','text-white');
+    tabPreview?.classList.remove('bg-blue-500','text-white');
+  }else{
+    // 显示树状预览，隐藏编辑区的画布与校验块
+    renderPreview();
+    previewEl.classList.remove('hidden');
+    els.canvas?.classList.add('hidden');
+    els.summary?.classList.add('hidden');
+    issuesBlock?.classList.add('hidden');
+    els.ruleHintBox?.classList.add('hidden');
+    // Tab样式高亮
+    tabPreview?.classList.add('bg-blue-500','text-white');
+    tabEdit?.classList.remove('bg-blue-500','text-white');
+  }
+}
+if(tabEdit&&tabPreview){tabEdit.onclick=()=>switchTab('edit');tabPreview.onclick=()=>switchTab('preview');}
+
+// 绘制思维导图连接线（中心->一级分支，父->子）
+function drawMindmapLinks(){
+  const preview = document.getElementById('preview');
+  if(!preview) return;
+  const container = preview.querySelector('.mindmap-container');
+  if(!container) return;
+  const svg = container.querySelector('.mindmap-links') || (function(){
+    const s = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    s.classList.add('mindmap-links');
+    container.appendChild(s);
+    return s;
+  })();
+  // 清空旧线条
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const contRect = container.getBoundingClientRect();
+  // 适配滚动区域：使用 scrollWidth/scrollHeight 设置 SVG 尺寸
+  svg.setAttribute('width', container.scrollWidth);
+  svg.setAttribute('height', container.scrollHeight);
+  svg.style.width = container.scrollWidth + 'px';
+  svg.style.height = container.scrollHeight + 'px';
+
+  const central = container.querySelector('.mindmap-central-node');
+  const firstLevelNodes = container.querySelectorAll('.mindmap-branches > .mindmap-branch > .mindmap-node');
+  // 中心节点 -> 一级分支
+  if(central){
+    firstLevelNodes.forEach(n => addLink(svg, central, n, contRect));
+  }
+  // 各分支父子之间连线
+  container.querySelectorAll('.mindmap-branch').forEach(branch => {
+    const fromNode = branch.querySelector(':scope > .mindmap-node');
+    const childrenNodes = branch.querySelectorAll(':scope > .mindmap-children > .mindmap-branch > .mindmap-node');
+    childrenNodes.forEach(child => addLink(svg, fromNode, child, contRect));
+  });
+}
+function addLink(svg, fromEl, toEl, contRect){
+  if(!fromEl || !toEl) return;
+  const fr = fromEl.getBoundingClientRect();
+  const tr = toEl.getBoundingClientRect();
+  // 纵向连线：父节点底部中心 -> 子节点顶部中心
+  const x1 = fr.left + fr.width/2 - contRect.left;
+  const y1 = fr.bottom - contRect.top;
+  const x2 = tr.left + tr.width/2 - contRect.left;
+  const y2 = tr.top - contRect.top;
+  const c1x = x1; // 控制点：向下偏移
+  const c1y = y1 + 40;
+  const c2x = x2; // 控制点：向上偏移
+  const c2y = y2 - 40;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', '#d1d5db');
+  path.setAttribute('stroke-width', '2');
+  svg.appendChild(path);
+}
+// 在窗口尺寸变化时重绘连线（仅预览可见时）
+window.addEventListener('resize', () => {
+  const preview = document.getElementById('preview');
+  if(preview && !preview.classList.contains('hidden')){
+    drawMindmapLinks();
+  }
+});
+// --- View 接入（非侵入式）：集中配置 + 视图应用，便于新手修改参数 ---
+// 说明：如需停用此接入，删除下方 <script type="module"> 块即可。
+</script>
+<script type="module">
+  import { AllocationMindmapView } from './js/views/AllocationMindmapView.js';
+  import { allocationMindmapConfig } from './js/views/config/allocationMindmapConfig.js';
+  // 实例化视图并在进入预览时应用配置到 DOM（不改变既有渲染）
+  const view = new AllocationMindmapView(allocationMindmapConfig);
+  const preview = document.getElementById('preview');
+  if (preview) {
+    // 若当前已是预览模式，可立即挂载；否则在切换到预览时重新挂载
+    view.mount('#preview');
+    // 监听切换以在每次进入预览后重新应用配置
+    const tabPreview = document.getElementById('tabPreview');
+    if (tabPreview) tabPreview.addEventListener('click', () => setTimeout(() => view.mount('#preview'), 0));
+  }
+</script><!-- 底部固定审核按钮 -->
+<div id="bottomActionButtons" class="bottom-action-buttons">
+  <button id="btnApproveBottom" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded">
+    <i class="fas fa-check-circle mr-1"></i>审核通过
+  </button>
+  <button id="btnRejectBottom" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded">
+    <i class="fas fa-times-circle mr-1"></i>驳回
+  </button>
+  <button id="btnEditBottom" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">
+    <i class="fas fa-edit mr-1"></i>编辑
+  </button>
+  <button id="btnBackBottom" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded">
+    <i class="fas fa-arrow-left mr-1"></i>返回
+  </button>
+</div>
+</body></html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能分账系统 · 入口</title>
+  <meta name="robots" content="noindex">
+  <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:24px}a{color:#2563eb}</style>
+  <script>
+    (function(){
+      var parts = (window.location.pathname || '/').split('/').filter(Boolean);
+      var base = parts.length ? ('/' + parts[0]) : '/';
+      var target = base + '/design/prototypes/indx.html';
+      try{ window.location.replace(target); }catch(e){}
+      document.addEventListener('DOMContentLoaded', function(){
+        var link = document.getElementById('entry');
+        if(link) link.href = target;
+      });
+    })();
+  </script>
+</head>
+<body>
+  <div>
+    <h1>正在跳转到入口页</h1>
+    <p>如未自动跳转，请点击：<a id="entry" href="../design/prototypes/indx.html">进入入口页</a></p>
+  </div>
+</body>
+</html>

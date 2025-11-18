@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统管理</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+  <div class="p-4 max-w-5xl mx-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-xl font-bold">系统管理</h1>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4">
+      <div class="bg-white rounded-lg shadow-sm border">
+        <div class="px-4 py-3 border-b flex items-center justify-between">
+          <div class="font-medium">账号默认权限</div>
+        </div>
+        <div class="p-4 space-y-4">
+          <div>
+            <div class="text-sm text-gray-600 mb-2">操作权限</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              <label class="flex items-center gap-2"><input type="checkbox" class="perm-op" value="新增项目" disabled><span>新增项目</span></label>
+              <label class="flex items-center gap-2"><input type="checkbox" class="perm-op" value="审核" disabled><span>审核</span></label>
+              <label class="flex items-center gap-2"><input type="checkbox" class="perm-op" value="账号管理" disabled><span>账号管理</span></label>
+              <label class="flex items-center gap-2"><input type="checkbox" class="perm-op" value="消息提醒" disabled><span>消息提醒</span></label>
+            </div>
+          </div>
+          <div>
+            <div class="text-sm text-gray-600 mb-2">项目查看权限</div>
+            <div class="flex items-center gap-6 text-sm">
+              <label class="flex items-center gap-2"><input type="radio" name="view-scope" class="perm-view" value="所有项目" disabled><span>所有项目</span></label>
+              <label class="flex items-center gap-2"><input type="radio" name="view-scope" class="perm-view" value="账号关联项目" disabled checked><span>账号关联项目</span></label>
+            </div>
+          </div>
+          <div class="flex items-center justify-end">
+            <button id="btnEdit" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded mr-2">编辑</button>
+            <button id="btnSave" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded" disabled>保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function loadSettings(){
+      try{ return JSON.parse(localStorage.getItem('system_settings')||'{}')||{} }catch(e){ return {} }
+    }
+    function saveSettings(s){ localStorage.setItem('system_settings',JSON.stringify(s)) }
+    function appendLog(text){
+      let list=[]; try{ list=JSON.parse(localStorage.getItem('system_logs')||'[]')||[] }catch(e){}
+      list.push({time:new Date().toISOString(), text});
+      localStorage.setItem('system_logs',JSON.stringify(list));
+    }
+    function applySettings(){
+      const s=loadSettings();
+      const ops=document.querySelectorAll('.perm-op');
+      const view=document.querySelectorAll('.perm-view');
+      ops.forEach(c=>{ c.checked = Array.isArray(s.ops) ? s.ops.includes(c.value) : false });
+      const scope = s.viewScope || '账号关联项目';
+      view.forEach(r=>{ r.checked = r.value===scope });
+    }
+    function setDisabled(disabled){
+      document.querySelectorAll('.perm-op').forEach(c=>c.disabled=disabled);
+      document.querySelectorAll('.perm-view').forEach(r=>r.disabled=disabled);
+      document.getElementById('btnSave').disabled = disabled;
+    }
+    document.getElementById('btnEdit').onclick=function(){ setDisabled(false) };
+    document.getElementById('btnSave').onclick=function(){
+      const ops=Array.from(document.querySelectorAll('.perm-op')).filter(c=>c.checked).map(c=>c.value);
+      const scope=Array.from(document.querySelectorAll('.perm-view')).find(r=>r.checked)?.value||'账号关联项目';
+      const s={ops,viewScope:scope};
+      saveSettings(s);
+      appendLog('更新账号默认权限：操作权限='+ops.join('、')+'；项目查看权限='+scope);
+      setDisabled(true);
+      alert('已保存');
+    };
+    (function init(){
+      const s=loadSettings();
+      if(!s.viewScope){ saveSettings({ops:[],viewScope:'账号关联项目'}) }
+      applySettings();
+      setDisabled(true);
+    })();
+  </script>
+</body>
+</html>

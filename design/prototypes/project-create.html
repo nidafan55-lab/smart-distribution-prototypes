@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目创建</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    .slide-out{transition:transform .3s ease,opacity .3s ease;transform:translateX(0);opacity:1}
+    .slide-out.removing{transform:translateX(40px);opacity:0}
+    .card-collapsed .card-body{display:none}
+  </style>
+  </head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-6">
+  <div class="max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-bold">项目创建</h1>
+      <button id="btnOpenLedger" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm"><i class="fas fa-plus mr-2"></i>新增账目</button>
+    </div>
+
+    <div id="stats" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"></div>
+
+    <div id="cards" class="space-y-4"></div>
+  </div>
+
+  <div id="ledgerModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+    <div class="bg-white w-full max-w-5xl rounded-lg shadow-lg p-2">
+      <div class="flex items-center justify-between px-2 py-2 border-b">
+        <div class="font-medium">新增账目</div>
+        <button id="ledgerClose" class="text-gray-600"><i class="fas fa-times"></i></button>
+      </div>
+      <iframe id="ledgerFrame" src="allocation-mindmap.html?from=pm" class="w-full h-[70vh]"></iframe>
+    </div>
+  </div>
+
+  <div id="agreementUploadModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+    <div class="bg-white w-full max-w-lg rounded-lg shadow-lg">
+      <div class="flex items-center justify-between px-4 py-3 border-b">
+        <div class="font-medium">上传协议</div>
+        <button id="agreementUploadClose" class="text-gray-600 px-2 py-1"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-4 space-y-4">
+        <div id="agreementDropArea" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50">
+          <div class="text-sm text-gray-600">拖拽PDF到此或点击选择文件</div>
+          <div class="mt-2">
+            <button id="agreementFileSelect" class="px-3 py-1 bg-gray-100 rounded border">选择文件</button>
+            <input id="agreementFileInput" type="file" accept="application/pdf" class="hidden" />
+          </div>
+          <div id="agreementFileName" class="mt-2 text-sm text-gray-500">未选择文件</div>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-4 py-3 border-t">
+        <button id="agreementUploadCancel" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded">取消</button>
+        <button id="agreementUploadConfirm" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">上传</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="agreementReviewDrawer" class="fixed inset-0 z-50 hidden">
+    <div id="agreementReviewMask" class="absolute inset-0 bg-black bg-opacity-40"></div>
+    <div id="agreementReviewPanel" class="absolute right-0 top-0 h-full w-full max-w-3xl bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 translate-x-full overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b">
+        <div class="font-medium">协议审核</div>
+        <button id="agreementReviewClose" class="text-gray-600 px-2 py-1"><i class="fas fa-times"></i></button>
+      </div>
+      <iframe id="reviewAgreementFrame" src="" class="w-full" style="height: calc(100vh - 52px);"></iframe>
+    </div>
+  </div>
+
+  <!-- 查看详情弹窗 -->
+  <div id="projectViewModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+    <div class="bg-white w-full max-w-6xl rounded-lg shadow-lg">
+      <div class="flex items-center justify-between px-4 py-3 border-b">
+        <div class="font-medium">项目详情</div>
+        <button id="projectViewClose" class="text-gray-600 px-2 py-1"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-4 space-y-6">
+        <!-- 基本信息 -->
+        <div>
+          <div class="text-sm text-gray-500 mb-2">基本信息</div>
+          <div id="projectViewBasic" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm"></div>
+        </div>
+        <!-- 账目表格 -->
+        <div>
+          <div class="text-sm text-gray-500 mb-2">账目</div>
+          <div class="overflow-auto border rounded">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-gray-100">
+                  <th class="px-3 py-2 text-left">账目名称</th>
+                  <th class="px-3 py-2 text-left">账目类型</th>
+                  <th class="px-3 py-2 text-left">营收时间</th>
+                  <th class="px-3 py-2 text-left">终端</th>
+                </tr>
+              </thead>
+              <tbody id="projectViewLedgerBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- 分账账户树状预览 -->
+        <div>
+          <div class="text-sm text-gray-500 mb-2">分账账户（预览）</div>
+          <div id="projectViewPreview" class="border rounded p-4"></div>
+        </div>
+        <!-- 协议 -->
+        <div>
+          <div class="text-sm text-gray-500 mb-2">协议</div>
+          <div id="projectViewAgreement" class="text-sm"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const statuses=["项目待审核","待上传协议","协议待审核","待发布"];
+    const statusMeta={
+      "项目待审核":{icon:"fas fa-clipboard-check",bg:"bg-indigo-50 dark:bg-indigo-900",border:"border-indigo-200 dark:border-indigo-700",text:"text-indigo-700 dark:text-indigo-200"},
+      "待上传协议":{icon:"fas fa-file-upload",bg:"bg-yellow-50 dark:bg-yellow-900",border:"border-yellow-200 dark:border-yellow-700",text:"text-yellow-700 dark:text-yellow-200"},
+      "协议待审核":{icon:"fas fa-file-signature",bg:"bg-purple-50 dark:bg-purple-900",border:"border-purple-200 dark:border-purple-700",text:"text-purple-700 dark:text-purple-200"},
+      "待发布":{icon:"fas fa-rocket",bg:"bg-green-50 dark:bg-green-900",border:"border-green-200 dark:border-green-700",text:"text-green-700 dark:text-green-200"}
+    };
+    let projects=[
+      {id:"PRJ-001",name:"十月渠道分账方案",creator:"张三",created:"2025-11-01 10:00",status:"项目待审核"},
+      {id:"PRJ-002",name:"十一月门店分账",creator:"李四",created:"2025-11-05 09:30",status:"待上传协议"},
+      {id:"PRJ-003",name:"平台服务费分账",creator:"王五",created:"2025-11-10 14:20",status:"协议待审核"},
+      {id:"PRJ-004",name:"渠道联合分账",creator:"赵六",created:"2025-11-12 16:05",status:"待发布"}
+    ];
+    try{
+      const local = JSON.parse(localStorage.getItem('allocation_projects')||'[]')||[];
+      if(Array.isArray(local) && local.length){
+        projects = projects.concat(local);
+      }
+    }catch(e){}
+
+    function countByStatus(){const m={};statuses.forEach(s=>m[s]=0);projects.forEach(p=>{m[p.status]=(m[p.status]||0)+1});return m}
+    function nextStatus(s){const idx=statuses.indexOf(s);return idx>=0&&idx<statuses.length-1?statuses[idx+1]:null}
+    function renderStats(){const c=countByStatus();const cont=document.getElementById('stats');cont.innerHTML=statuses.map(s=>{const m=statusMeta[s];return `<div class=\"${m.bg} ${m.border} border rounded-lg p-4 flex items-center gap-3\"><div class=\"w-10 h-10 rounded-full flex items-center justify-center ${m.text} bg-white dark:bg-gray-800 shadow-sm\"><i class=\"${m.icon}\"></i></div><div><div class=\"text-sm text-gray-600 dark:text-gray-300\">${s}</div><div class=\"text-2xl font-bold ${m.text}\">${c[s]||0}</div></div></div>`}).join('')}
+
+    function cardHeader(title){return `<div class=\"flex items-center justify-between\"><div class=\"font-medium\">${title}</div><button class=\"toggle px-2 py-1 text-sm text-blue-600 dark:text-blue-300\"><i class=\"fas fa-chevron-up mr-1\"></i>折叠</button></div>`}
+    function tableFor(status){const rows=projects.filter(p=>p.status===status).map((p,i)=>{
+      const ops = status==="项目待审核"? ["审核","查看","上传协议","流转"] : status==="待上传协议"? ["查看","上传协议","流转"] : status==="协议待审核"? ["查看","审核协议","发布","流转"] : ["查看","发布"];
+      const btns = ops.map(o=>`<button class=\"op px-2 py-1 rounded border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900\" data-op=\"${o}\" data-id=\"${p.id}\" data-status=\"${status}\">${o}</button>`).join(' ');
+      return `<tr class=\"border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition slide-out\" data-id=\"${p.id}\"><td class=\"px-3 py-2\">${i+1}</td><td class=\"px-3 py-2\">${p.name}</td><td class=\"px-3 py-2\">${p.creator}</td><td class=\"px-3 py-2\">${p.created}</td><td class=\"px-3 py-2 text-center space-x-2\">${btns}</td></tr>`;
+    }).join('');
+      const head=`<tr class=\"bg-gray-50 dark:bg-gray-700\"><th class=\"px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-200\">序号</th><th class=\"px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-200\">项目名称</th><th class=\"px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-200\">创建人</th><th class=\"px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-200\">创建时间</th><th class=\"px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-200 text-center\">操作</th></tr>`;
+      return `<div class=\"text-sm text-gray-500 dark:text-gray-400 mb-2\">${status}</div><div class=\"overflow-auto border dark:border-gray-700 rounded-lg\"><table class=\"w-full text-sm\"><thead>${head}</thead><tbody>${rows||''}</tbody></table></div>`
+    }
+    function renderCards(){const cont=document.getElementById('cards');cont.innerHTML=statuses.map(s=>`<div class=\"card border dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800 shadow-sm\"><div class=\"card-head\">${cardHeader(s)}</div><div class=\"card-body\">${tableFor(s)}</div></div>`).join('');
+      cont.querySelectorAll('.toggle').forEach(btn=>{btn.onclick=()=>{const card=btn.closest('.card');card.classList.toggle('card-collapsed');btn.innerHTML=card.classList.contains('card-collapsed')?'<i class=\"fas fa-chevron-down mr-1\"></i>展开':'<i class=\"fas fa-chevron-up mr-1\"></i>折叠'}});
+      cont.querySelectorAll('button.op').forEach(b=>{b.onclick=onOpClick});
+    }
+    function onOpClick(e){const op=e.currentTarget.dataset.op;const id=e.currentTarget.dataset.id;const curStatus=e.currentTarget.dataset.status;const proj=projects.find(x=>x.id===id);if(!proj)return; if(op==='流转'){const tr=e.currentTarget.closest('tr');tr.classList.add('removing');setTimeout(()=>{const ns=nextStatus(curStatus);if(ns){proj.status=ns;renderStats();renderCards();}},300);} else if(op==='发布'){window.location.href='project_management_rewrite.html?projectId='+encodeURIComponent(id);} else if(op==='查看'){openProjectView(id);} else if(op==='审核'){window.location.href='allocation-mindmap.html?mode=review&projectId='+encodeURIComponent(id);} else if(op==='上传协议'){openAgreementUpload(id);} else if(op==='审核协议'){openAgreementReview(id);} else {alert(op+'已触发');}}
+
+    let currentAgreementProjectId=null;let currentAgreementFile=null;
+    function openAgreementUpload(projectId){currentAgreementProjectId=projectId;currentAgreementFile=null;document.getElementById('agreementFileName').textContent='未选择文件';document.getElementById('agreementUploadModal').classList.remove('hidden')}
+    function closeAgreementUpload(){document.getElementById('agreementUploadModal').classList.add('hidden')}
+    function initAgreementUploadEvents(){const dropArea=document.getElementById('agreementDropArea');const fileInput=document.getElementById('agreementFileInput');const fileSelect=document.getElementById('agreementFileSelect');const fileNameEl=document.getElementById('agreementFileName');function setFile(f){if(!f){currentAgreementFile=null;fileNameEl.textContent='未选择文件';return}currentAgreementFile=f;fileNameEl.textContent=`已选择：${f.name}`}['dragenter','dragover'].forEach(evt=>dropArea.addEventListener(evt,(e)=>{e.preventDefault();e.stopPropagation();dropArea.classList.add('border-blue-400','bg-blue-50')}));['dragleave','drop'].forEach(evt=>dropArea.addEventListener(evt,(e)=>{e.preventDefault();e.stopPropagation();dropArea.classList.remove('border-blue-400','bg-blue-50')}));dropArea.addEventListener('drop',(e)=>{const files=e.dataTransfer?.files;if(files&&files.length){setFile(files[0])}});fileSelect.addEventListener('click',()=>fileInput.click());fileInput.addEventListener('change',()=>{const f=fileInput.files&&fileInput.files[0];setFile(f)});document.getElementById('agreementUploadCancel').onclick=()=>{currentAgreementFile=null;fileInput.value='';fileNameEl.textContent='未选择文件';closeAgreementUpload()};document.getElementById('agreementUploadClose').onclick=()=>{currentAgreementFile=null;fileInput.value='';fileNameEl.textContent='未选择文件';closeAgreementUpload()};document.getElementById('agreementUploadConfirm').onclick=()=>{if(!currentAgreementFile){alert('请选择要上传的PDF文件');return}const reader=new FileReader();reader.onload=function(){try{const map=JSON.parse(localStorage.getItem('allocation_agreements')||'{}')||{};map[currentAgreementProjectId]={name:currentAgreementFile.name,url:reader.result};localStorage.setItem('allocation_agreements',JSON.stringify(map));alert('上传成功');closeAgreementUpload()}catch(err){console.error(err);alert('上传失败')}};reader.readAsDataURL(currentAgreementFile)}}
+
+    function openProjectView(projectId){
+      const modal=document.getElementById('projectViewModal');
+      const basic=document.getElementById('projectViewBasic');
+      const ledgerBody=document.getElementById('projectViewLedgerBody');
+      const preview=document.getElementById('projectViewPreview');
+      const agreement=document.getElementById('projectViewAgreement');
+      const proj=projects.find(p=>p.id===projectId);
+      let scheme=null;
+      try{
+        const list=JSON.parse(localStorage.getItem('allocation_projects')||'[]')||[];
+        const fromLocal=list.find(p=>p.id===projectId);
+        scheme=fromLocal&&fromLocal.scheme?fromLocal.scheme:null;
+      }catch(e){}
+      const ruleText=(scheme&&scheme.rule)?scheme.rule:'';
+      basic.innerHTML=`
+        <div><div class="text-gray-500">项目名称</div><div class="mt-1">${proj.name||''}</div></div>
+        <div><div class="text-gray-500">创建时间</div><div class="mt-1">${proj.created||''}</div></div>
+        <div><div class="text-gray-500">创建人</div><div class="mt-1">${proj.creator||''}</div></div>
+        <div><div class="text-gray-500">分账规则</div><div class="mt-1">${ruleText||'—'}</div></div>
+      `;
+      const items=(scheme&&Array.isArray(scheme.ledgerItems))?scheme.ledgerItems:[];
+      ledgerBody.innerHTML=items.map(l=>{
+        const rs=l.revenueStart?`${l.revenueStart.y}-${String(l.revenueStart.m).padStart(2,'0')}-${String(l.revenueStart.d).padStart(2,'0')}`:'';
+        const re=l.revenueEnd?`${l.revenueEnd.y}-${String(l.revenueEnd.m).padStart(2,'0')}-${String(l.revenueEnd.d).padStart(2,'0')}`:'';
+        const terms=(l.terminals&&l.terminals.length)?l.terminals.join('、'):'—';
+        return `<tr>
+          <td class="px-3 py-2">${l.name||''}</td>
+          <td class="px-3 py-2">${l.ledgerType||''}</td>
+          <td class="px-3 py-2">${rs&&(re?rs+' 至 '+re:rs)}</td>
+          <td class="px-3 py-2">${terms}</td>
+        </tr>`;
+      }).join('')||'<tr><td class="px-3 py-2 text-gray-500" colspan="4">暂无账目</td></tr>';
+      function renderTree(){
+        if(!scheme||!scheme.nodes){preview.innerHTML='<div class="text-gray-500 text-sm">暂无分账账户</div>';return;}
+        function nodeHTML(id){
+          const n=scheme.nodes[id];
+          if(!n) return '';
+          const children=(n.children||[]).map(child=>`<li>${nodeHTML(child)}</li>`).join('');
+          return `<div class="px-2 py-1 border rounded inline-block bg-gray-50">${n.name||('节点'+id)}</div>${children?`<ul class="ml-4 mt-2">${children}</ul>`:''}`;
+        }
+        const roots=(scheme.roots||[]);
+        const html=roots.map(r=>`<li>${nodeHTML(r)}</li>`).join('');
+        preview.innerHTML = html?`<div class="tree"><ul>${html}</ul></div>`:'<div class="text-gray-500 text-sm">暂无分账账户</div>';
+      }
+      renderTree();
+      let agreements={};
+      try{agreements=JSON.parse(localStorage.getItem('allocation_agreements')||'{}')||{};}catch(e){}
+      const ag=agreements[projectId];
+      agreement.innerHTML = ag?`<a class="text-blue-600" href="${ag.url}" download>${ag.name||'下载协议'}</a>`:'<span class="text-gray-500">未上传协议</span>';
+      modal.classList.remove('hidden');
+    }
+    document.getElementById('projectViewClose').onclick=()=>document.getElementById('projectViewModal').classList.add('hidden')
+
+    function openLedger(){window.location.href='allocation-mindmap.html?from=pm'}
+    document.getElementById('btnOpenLedger').onclick=openLedger
+
+    function openAgreementReview(projectId){const drawer=document.getElementById('agreementReviewDrawer');const panel=document.getElementById('agreementReviewPanel');const frame=document.getElementById('reviewAgreementFrame');frame.src='project-pages/review-agreement.html?projectId='+encodeURIComponent(projectId);drawer.classList.remove('hidden');document.body.classList.add('overflow-hidden');requestAnimationFrame(()=>{panel.classList.remove('translate-x-full');});}
+    function closeAgreementReview(){const drawer=document.getElementById('agreementReviewDrawer');const panel=document.getElementById('agreementReviewPanel');panel.classList.add('translate-x-full');setTimeout(()=>{drawer.classList.add('hidden');document.body.classList.remove('overflow-hidden')},300)}
+    document.getElementById('agreementReviewClose').onclick=closeAgreementReview
+    document.getElementById('agreementReviewMask').onclick=closeAgreementReview
+
+    renderStats();renderCards();initAgreementUploadEvents();
+  </script>
+</body>
+</html>

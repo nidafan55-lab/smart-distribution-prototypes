@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统日志</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+  <div class="p-4 max-w-5xl mx-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-xl font-bold">系统日志</h1>
+    </div>
+    <div id="logsWrap" class="bg-white rounded-lg shadow-sm border">
+      <div class="px-4 py-3 border-b text-sm text-gray-600">系统修改记录</div>
+      <div id="logsList" class="p-4 space-y-3 text-sm"></div>
+    </div>
+  </div>
+  <script>
+    function loadLogs(){ try{ return JSON.parse(localStorage.getItem('system_logs')||'[]')||[] }catch(e){ return [] } }
+    function render(){
+      const list=loadLogs();
+      const box=document.getElementById('logsList');
+      if(!list.length){ box.innerHTML = '<div class="text-gray-500">暂无日志</div>'; return }
+      box.innerHTML = list.map(item=>{
+        return `<div class="flex items-start justify-between border rounded p-3">
+          <div class="text-gray-800">${item.text}</div>
+          <div class="text-gray-500">${new Date(item.time).toLocaleString()}</div>
+        </div>`
+      }).join('');
+    }
+    render();
+  </script>
+</body>
+</html>

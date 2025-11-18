@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>交易管理 - 智能分账系统</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6">
+    <!-- 标题与操作 -->
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">交易管理</h1>
+      <div class="space-x-2">
+        <button class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">
+          <i class="fas fa-redo mr-2"></i>刷新
+        </button>
+        <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded">
+          <i class="fas fa-download mr-2"></i>导出
+        </button>
+      </div>
+    </div>
+
+    <!-- 概览统计卡片 -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-blue-50 p-4 rounded-lg">
+        <div class="flex items-center">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
+            <i class="fas fa-receipt"></i>
+          </div>
+          <div>
+            <p class="text-gray-500">今日交易数</p>
+            <p class="text-xl font-bold">312</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-yellow-50 p-4 rounded-lg">
+        <div class="flex items-center">
+          <div class="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center mr-3">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div>
+            <p class="text-gray-500">待分账交易</p>
+            <p class="text-xl font-bold">27</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-green-50 p-4 rounded-lg">
+        <div class="flex items-center">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center mr-3">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div>
+            <p class="text-gray-500">分账成功率</p>
+            <p class="text-xl font-bold">98.6%</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div>
+          <label class="text-sm text-gray-500">关键词</label>
+          <input type="text" placeholder="交易号/账户/规则" class="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-300">
+        </div>
+        <div>
+          <label class="text-sm text-gray-500">日期范围</label>
+          <select class="mt-1 w-full border rounded px-3 py-2">
+            <option>今天</option>
+            <option>近7天</option>
+            <option>近30天</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm text-gray-500">状态</label>
+          <select class="mt-1 w-full border rounded px-3 py-2">
+            <option>全部</option>
+            <option>待分账</option>
+            <option>已分账</option>
+            <option>失败</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button class="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">应用筛选</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 交易列表 -->
+    <div class="bg-white rounded-lg border">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">交易号</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">时间</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">金额</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">支付渠道</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">归属账户</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">分账规则</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">状态</th>
+            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500">操作</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr>
+            <td class="px-4 py-2 text-sm font-mono">TX202510170001</td>
+            <td class="px-4 py-2 text-sm">2025-10-17 10:25</td>
+            <td class="px-4 py-2 text-sm font-semibold">¥ 268.00</td>
+            <td class="px-4 py-2 text-sm">微信支付</td>
+            <td class="px-4 py-2 text-sm">门店-杭州西湖</td>
+            <td class="px-4 py-2 text-sm">标准分销比例</td>
+            <td class="px-4 py-2">
+              <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">待分账</span>
+            </td>
+            <td class="px-4 py-2 text-right">
+              <button class="text-blue-600 hover:text-blue-800 mr-3">分账</button>
+              <button class="text-gray-600 hover:text-gray-800">详情</button>
+            </td>
+          </tr>
+          <tr>
+            <td class="px-4 py-2 text-sm font-mono">TX202510160452</td>
+            <td class="px-4 py-2 text-sm">2025-10-16 18:42</td>
+            <td class="px-4 py-2 text-sm font-semibold">¥ 1,280.00</td>
+            <td class="px-4 py-2 text-sm">支付宝</td>
+            <td class="px-4 py-2 text-sm">渠道-抖音</td>
+            <td class="px-4 py-2 text-sm">阶梯分销规则</td>
+            <td class="px-4 py-2">
+              <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">已分账</span>
+            </td>
+            <td class="px-4 py-2 text-right">
+              <button class="text-gray-600 hover:text-gray-800">查看凭据</button>
+            </td>
+          </tr>
+          <tr>
+            <td class="px-4 py-2 text-sm font-mono">TX202510150123</td>
+            <td class="px-4 py-2 text-sm">2025-10-15 09:13</td>
+            <td class="px-4 py-2 text-sm font-semibold">¥ 320.00</td>
+            <td class="px-4 py-2 text-sm">银行卡</td>
+            <td class="px-4 py-2 text-sm">门店-深圳南山</td>
+            <td class="px-4 py-2 text-sm">定额分账</td>
+            <td class="px-4 py-2">
+              <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">失败</span>
+            </td>
+            <td class="px-4 py-2 text-right">
+              <button class="text-red-600 hover:text-red-800 mr-3">重试</button>
+              <button class="text-gray-600 hover:text-gray-800">详情</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 分页 -->
+      <div class="flex items-center justify-between p-4">
+        <p class="text-sm text-gray-500">共 1,286 条记录 · 第 1/50 页</p>
+        <div class="space-x-2">
+          <button class="px-3 py-1 bg-gray-100 rounded">上一页</button>
+          <button class="px-3 py-1 bg-blue-500 text-white rounded">1</button>
+          <button class="px-3 py-1 bg-gray-100 rounded">2</button>
+          <button class="px-3 py-1 bg-gray-100 rounded">3</button>
+          <span class="text-gray-400">...</span>
+          <button class="px-3 py-1 bg-gray-100 rounded">下一页</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

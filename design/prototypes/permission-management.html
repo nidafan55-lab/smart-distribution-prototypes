@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>权限管理</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-xl font-bold">权限管理</h1>
+      <button id="btnAddPermission" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"><i class="fas fa-plus mr-1"></i>添加权限设置</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+      <div>
+        <label class="text-sm text-gray-600">账号分组</label>
+        <select id="filterGroup" class="mt-1 w-full border rounded px-3 py-2">
+          <option value="">全部分组</option>
+          <option value="总部">总部</option>
+          <option value="区域">区域</option>
+          <option value="门店">门店</option>
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <label class="text-sm text-gray-600">账号名称</label>
+        <input id="filterName" class="mt-1 w-full border rounded px-3 py-2" placeholder="输入账号名称">
+      </div>
+    </div>
+
+    <div class="overflow-auto border rounded">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="text-left px-3 py-2">创建时间</th>
+            <th class="text-left px-3 py-2">账号分组</th>
+            <th class="text-left px-3 py-2">账号数</th>
+            <th class="text-left px-3 py-2">账号名称</th>
+            <th class="text-left px-3 py-2">权限</th>
+          </tr>
+        </thead>
+        <tbody id="permTableBody"></tbody>
+      </table>
+    </div>
+
+    <div id="emptyHint" class="text-xs text-gray-500 mt-2 hidden">暂无权限设置</div>
+  </div>
+
+  <div id="permissionModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+    <div class="bg-white w-full max-w-3xl rounded-lg shadow-lg p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-lg font-medium">添加权限设置</h4>
+        <button id="permModalClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+        <div class="md:col-span-3">
+          <label class="inline-flex items-center mr-4"><input type="radio" name="pickMode" value="account" class="pick-mode" checked><span class="ml-2">按账号选择</span></label>
+          <label class="inline-flex items-center"><input type="radio" name="pickMode" value="group" class="pick-mode"><span class="ml-2">按分组选择</span></label>
+        </div>
+      </div>
+      <div id="pickSection" class="mb-3"></div>
+      <div class="border rounded p-3 mb-3">
+        <div class="text-sm font-medium mb-2">权限设置</div>
+        <div class="mb-2 text-xs text-gray-500">操作权限</div>
+        <div id="permOps" class="flex flex-wrap mb-2"></div>
+        <div class="mb-2 text-xs text-gray-500">项目查看权限</div>
+        <div id="permView" class="flex flex-wrap"></div>
+      </div>
+        <div class="flex items-center justify-end gap-2">
+        <button id="permModalCancel" class="px-3 py-2 bg-gray-200 rounded">取消</button>
+        <button id="permModalConfirm" class="px-3 py-2 bg-blue-600 text-white rounded">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const data = [
+      { id:'PM-001', created:'2025-11-01 10:00', group:'总部', count:3, name:'总公司', ops:['项目创建','审核'], view:'所有项目' },
+      { id:'PM-002', created:'2025-11-05 09:30', group:'门店', count:12, name:'华东门店组', ops:['账号管理','消息提醒'], view:'账号关联项目' },
+      { id:'PM-003', created:'2025-11-10 14:20', group:'区域', count:5, name:'华北区域', ops:['项目创建','账号管理'], view:'所有项目' }
+    ];
+
+    const els = {
+      filterGroup: document.getElementById('filterGroup'),
+      filterName: document.getElementById('filterName'),
+      tableBody: document.getElementById('permTableBody'),
+      empty: document.getElementById('emptyHint'),
+      btnAdd: document.getElementById('btnAddPermission')
+    };
+
+    const opOptions = ['项目创建','审核','账号管理','消息提醒'];
+    const viewOptions = ['所有项目','账号关联项目'];
+    const accountsData = [
+      {id:'AC-001', name:'总公司', phone:'13800000001', group:'总部'},
+      {id:'AC-002', name:'华北分公司', phone:'13800000002', group:'区域'},
+      {id:'AC-003', name:'北京办事处', phone:'13800000003', group:'门店'},
+      {id:'AC-004', name:'华东分公司', phone:'13800000004', group:'区域'},
+      {id:'AC-005', name:'上海办事处', phone:'13800000005', group:'门店'}
+    ];
+    const groupsData = ['总部','区域','门店'];
+
+    function render() {
+      const g = els.filterGroup.value;
+      const n = els.filterName.value.trim().toLowerCase();
+      const rows = data.filter(x => (!g || x.group === g) && (!n || (x.name||'').toLowerCase().includes(n)) );
+      els.empty.classList.toggle('hidden', rows.length !== 0);
+      els.tableBody.innerHTML = rows.map(x => {
+        const opHTML = opOptions.map(o => `<label class=\"inline-flex items-center mr-3 mb-1\"><input type=\"checkbox\" class=\"perm-op\" data-id=\"${x.id}\" value=\"${o}\" ${x.ops.includes(o)?'checked':''}><span class=\"ml-2\">${o}</span></label>`).join('');
+        const viewHTML = viewOptions.map(v => `<label class=\"inline-flex items-center mr-3\"><input type=\"radio\" name=\"view-${x.id}\" class=\"perm-view\" data-id=\"${x.id}\" value=\"${v}\" ${x.view===v?'checked':''}><span class=\"ml-2\">${v}</span></label>`).join('');
+        return `
+          <tr class=\"border-t\" data-id=\"${x.id}\">
+            <td class=\"px-3 py-2\">${x.created}</td>
+            <td class=\"px-3 py-2\">${x.group}</td>
+            <td class=\"px-3 py-2\">${x.count}</td>
+            <td class=\"px-3 py-2\">${x.name}</td>
+            <td class=\"px-3 py-2\">
+              <div class=\"text-xs text-gray-500 mb-1\">操作权限</div>
+              <div class=\"flex flex-wrap\">${opHTML}</div>
+              <div class=\"text-xs text-gray-500 mt-2 mb-1\">项目查看权限</div>
+              <div class=\"flex flex-wrap\">${viewHTML}</div>
+            </td>
+          </tr>`;
+      }).join('');
+
+      bindRowEvents();
+    }
+
+    function bindRowEvents(){
+      document.querySelectorAll('input.perm-op').forEach(chk => {
+        chk.onchange = () => {
+          const id = chk.dataset.id;
+          const row = data.find(d => d.id === id);
+          if (!row) return;
+          const val = chk.value;
+          if (chk.checked) { if (!row.ops.includes(val)) row.ops.push(val); }
+          else { row.ops = row.ops.filter(x => x !== val); }
+        };
+      });
+      document.querySelectorAll('input.perm-view').forEach(rd => {
+        rd.onchange = () => {
+          const id = rd.dataset.id;
+          const row = data.find(d => d.id === id);
+          if (!row) return;
+          row.view = rd.value;
+        };
+      });
+    }
+
+    els.filterGroup.onchange = render;
+    els.filterName.oninput = render;
+
+    const modal = document.getElementById('permissionModal');
+    const pickSection = document.getElementById('pickSection');
+    const opsBox = document.getElementById('permOps');
+    const viewBox = document.getElementById('permView');
+    let pickMode = 'account';
+
+    function renderPickSection(){
+      if(pickMode==='account'){
+        const rows = accountsData.map(a=>
+          `<tr class=\"border-t\">`+
+          `<td class=\"px-2 py-1 text-center\"><input type=\"checkbox\" class=\"pick-account\" value=\"${a.id}\" data-name=\"${a.name}\" data-group=\"${a.group}\"></td>`+
+          `<td class=\"px-2 py-1\">${a.name}</td>`+
+          `<td class=\"px-2 py-1\">${a.phone}</td>`+
+          `<td class=\"px-2 py-1\">${a.group}</td>`+
+          `</tr>`
+        ).join('');
+        pickSection.innerHTML = `<div class=\"overflow-auto border rounded\"><table class=\"w-full text-sm\"><thead><tr class=\"bg-gray-100\"><th class=\"text-center px-2 py-1 w-10\">选择</th><th class=\"text-left px-2 py-1\">账号名称</th><th class=\"text-left px-2 py-1\">手机号</th><th class=\"text-left px-2 py-1\">账号分组</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      }else{
+        const items = groupsData.map(g=>
+          `<label class=\"inline-flex items-center mr-4 mb-2\"><input type=\"checkbox\" class=\"pick-group\" value=\"${g}\"><span class=\"ml-2\">${g}</span></label>`
+        ).join('');
+        pickSection.innerHTML = `<div class=\"mb-2\"><label class=\"inline-flex items-center mr-4\"><input type=\"checkbox\" id=\"pickGroupAll\"><span class=\"ml-2\">全选</span></label></div><div class=\"flex flex-wrap\">${items}</div>`;
+        const all = document.getElementById('pickGroupAll');
+        if(all){
+          all.onchange = ()=>{
+            const checked = all.checked;
+            document.querySelectorAll('.pick-group').forEach(c=>{c.checked=checked;});
+          };
+        }
+      }
+    }
+
+    function renderPermOptions(){
+      opsBox.innerHTML = opOptions.map(o=>`<label class=\"inline-flex items-center mr-4 mb-1\"><input type=\"checkbox\" class=\"set-op\" value=\"${o}\"><span class=\"ml-2\">${o}</span></label>`).join('');
+      viewBox.innerHTML = viewOptions.map(v=>`<label class=\"inline-flex items-center mr-4 mb-1\"><input type=\"radio\" name=\"set-view\" class=\"set-view\" value=\"${v}\" ${v==='账号关联项目'?'checked':''}><span class=\"ml-2\">${v}</span></label>`).join('');
+    }
+
+    document.querySelectorAll('input.pick-mode').forEach(r=>{
+      r.onchange = ()=>{ pickMode = r.value; renderPickSection(); };
+    });
+
+    function openModal(){
+      modal.classList.remove('hidden');
+      pickMode = 'account';
+      document.querySelectorAll('input.pick-mode').forEach(r=>{ r.checked = (r.value==='account'); });
+      renderPickSection();
+      renderPermOptions();
+    }
+    function closeModal(){ modal.classList.add('hidden'); }
+
+    els.btnAdd.onclick = openModal;
+    document.getElementById('permModalClose').onclick = closeModal;
+    document.getElementById('permModalCancel').onclick = closeModal;
+    document.getElementById('permModalConfirm').onclick = ()=>{
+      const ops = [...document.querySelectorAll('.set-op:checked')].map(c=>c.value);
+      const view = document.querySelector('.set-view:checked')?.value || '账号关联项目';
+      let name = '';
+      let group = '';
+      let count = 0;
+      if(pickMode==='account'){
+        const picks = [...document.querySelectorAll('.pick-account:checked')];
+        count = picks.length;
+        if(count>0){
+          const names = picks.map(p=>p.dataset.name);
+          name = names.slice(0,3).join('、') + (names.length>3?' 等':'');
+          const gs = new Set(picks.map(p=>p.dataset.group));
+          group = gs.size>1 ? '多组' : (gs.values().next().value||'');
+        }else{
+          name = '未选择账号';
+          group = '';
+        }
+      }else{
+        const picks = [...document.querySelectorAll('.pick-group:checked')];
+        count = picks.length;
+        if(count>0){
+          const names = picks.map(p=>p.value);
+          name = names.join('、');
+          group = '多组';
+        }else{
+          name = '未选择分组';
+          group = '';
+        }
+      }
+      const id = 'PM-' + String(100 + data.length + 1).padStart(3, '0');
+      const created = new Date().toISOString().slice(0,16).replace('T',' ');
+      data.unshift({ id, created, group, count, name, ops, view });
+      render();
+      closeModal();
+    };
+
+    render();
+    const headRow=document.querySelector('table thead tr');
+    if(headRow && headRow.children.length===5){
+      const th=document.createElement('th');
+      th.className='text-center px-3 py-2';
+      th.textContent='操作';
+      headRow.appendChild(th);
+    }
+    const bodyEl=document.getElementById('permTableBody');
+    function ensureDeleteCells(){
+      bodyEl.querySelectorAll('tr').forEach(tr=>{
+        if(!tr.querySelector('.perm-delete')){
+          const td=document.createElement('td');
+          td.className='px-3 py-2 text-center';
+          const btn=document.createElement('button');
+          btn.className='text-red-600 perm-delete';
+          btn.dataset.id=tr.dataset.id;
+          btn.textContent='删除';
+          btn.onclick=()=>{
+            const id=btn.dataset.id;
+            const idx=data.findIndex(d=>d.id===id);
+            if(idx>=0){ data.splice(idx,1); render(); }
+          };
+          td.appendChild(btn);
+          tr.appendChild(td);
+        }
+      });
+    }
+    ensureDeleteCells();
+    const mo=new MutationObserver(()=>ensureDeleteCells());
+    mo.observe(bodyEl,{childList:true});
+  </script>
+</body>
+</html>

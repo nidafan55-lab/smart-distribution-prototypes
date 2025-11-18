@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自定义分账方案设计器 - 智能分账系统</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6">
+    <!-- 标题与操作 -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold">自定义分账方案设计器</h1>
+        <p class="text-sm text-gray-500">选择账号与账目，配置层级、额度（百分比/定额）与分配优先级</p>
+      </div>
+      <div class="space-x-2">
+        <button id="btnExport" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"><i class="fas fa-file-export mr-1"></i>导出JSON</button>
+        <button id="btnValidate" class="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded"><i class="fas fa-check mr-1"></i>校验方案</button>
+      </div>
+    </div>
+
+    <!-- 步骤1：账目与方案信息 -->
+    <div class="bg-gray-50 p-4 rounded-lg mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div>
+          <label class="text-sm text-gray-500">方案名称</label>
+          <input id="schemeName" type="text" class="mt-1 w-full border rounded px-3 py-2" placeholder="例如：10月渠道分账方案" />
+        </div>
+        <div>
+          <label class="text-sm text-gray-500">账目</label>
+          <select id="ledgerSelect" class="mt-1 w-full border rounded px-3 py-2">
+            <option value="商品收入">商品收入</option>
+            <option value="服务收入">服务收入</option>
+            <option value="退款">退款</option>
+            <option value="平台佣金">平台佣金</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm text-gray-500">账目总额（用于定额校验）</label>
+          <input id="ledgerTotal" type="number" min="0" step="0.01" class="mt-1 w-full border rounded px-3 py-2" placeholder="例如：100000" />
+        </div>
+        <div>
+          <label class="text-sm text-gray-500">备注</label>
+          <input id="schemeNote" type="text" class="mt-1 w-full border rounded px-3 py-2" placeholder="可选" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤2：选择账号并添加到方案 -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <h3 class="text-lg font-medium mb-4">选择账号并添加</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="text-sm text-gray-500">可用账号（多选）</label>
+          <select id="accountSelect" multiple class="mt-1 w-full border rounded px-3 py-2 h-40">
+            <option>门店-杭州西湖</option>
+            <option>门店-深圳南山</option>
+            <option>渠道-抖音</option>
+            <option>渠道-微信视频号</option>
+            <option>渠道-线下POS</option>
+            <option>平台-服务费</option>
+            <option>代理-华东大区</option>
+            <option>代理-华南大区</option>
+            <option>联盟-分销商A</option>
+            <option>联盟-分销商B</option>
+          </select>
+          <button id="btnAddAccounts" class="mt-2 w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">添加到方案</button>
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-sm text-gray-500">搜索账号</label>
+          <input id="accountSearch" type="text" class="mt-1 w-full border rounded px-3 py-2" placeholder="输入关键字过滤左侧列表" />
+          <p class="text-xs text-gray-500 mt-2">添加后可在下方配置层级与分账参数</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤3：配置层级与分账参数（简化版） -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium">层级与分账参数</h3>
+        <div class="text-sm text-gray-500">提示：子账号的百分比合计应≤100%，定额合计应≤账目总额</div>
+      </div>
+
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">账号</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">父级</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">额度类型</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">数值(%) / 金额(¥)</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">优先级</th>
+            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500">操作</th>
+          </tr>
+        </thead>
+        <tbody id="nodesBody" class="divide-y divide-gray-200"></tbody>
+      </table>
+
+      <div id="groupSummary" class="mt-4 text-sm"></div>
+    </div>
+
+    <!-- 校验结果 -->
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+      <div class="flex items-center mb-2"><i class="fas fa-info-circle text-yellow-600 mr-2"></i><span class="font-medium">校验结果</span></div>
+      <ul id="validateResult" class="list-disc list-inside text-yellow-700 text-sm"></ul>
+    </div>
+  </div>
+
+<script>
+  const scheme = { name: '', note: '', ledger: '商品收入', ledgerTotal: 0, nodes: [] };
+  const els = {
+    schemeName: document.getElementById('schemeName'),
+    schemeNote: document.getElementById('schemeNote'),
+    ledgerSelect: document.getElementById('ledgerSelect'),
+    ledgerTotal: document.getElementById('ledgerTotal'),
+    accountSelect: document.getElementById('accountSelect'),
+    accountSearch: document.getElementById('accountSearch'),
+    btnAddAccounts: document.getElementById('btnAddAccounts'),
+    nodesBody: document.getElementById('nodesBody'),
+    groupSummary: document.getElementById('groupSummary'),
+    validateResult: document.getElementById('validateResult'),
+    btnExport: document.getElementById('btnExport'),
+    btnValidate: document.getElementById('btnValidate'),
+  };
+
+  els.schemeName.addEventListener('input', () => scheme.name = els.schemeName.value);
+  els.schemeNote.addEventListener('input', () => scheme.note = els.schemeNote.value);
+  els.ledgerSelect.addEventListener('change', () => scheme.ledger = els.ledgerSelect.value);
+  els.ledgerTotal.addEventListener('input', () => scheme.ledgerTotal = parseFloat(els.ledgerTotal.value || 0));
+
+  els.accountSearch.addEventListener('input', () => {
+    const keyword = els.accountSearch.value.trim();
+    for (const opt of els.accountSelect.options) {
+      opt.hidden = keyword && !opt.text.toLowerCase().includes(keyword.toLowerCase());
+    }
+  });
+
+  els.btnAddAccounts.addEventListener('click', () => {
+    const selected = Array.from(els.accountSelect.selectedOptions);
+    selected.forEach(opt => {
+      if (!scheme.nodes.find(n => n.name === opt.text)) {
+        scheme.nodes.push({ id: 'N' + (scheme.nodes.length+1), name: opt.text, parentId: null, type: 'percent', value: 0, priority: 1 });
+      }
+    });
+    renderNodes();
+  });
+
+  els.btnExport.addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(scheme, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (scheme.name || 'allocation-scheme') + '.json';
+    a.click();
+  });
+
+  els.btnValidate.addEventListener('click', validateScheme);
+
+  function renderNodes() {
+    els.nodesBody.innerHTML = '';
+    const optionsHtml = ['<option value="">(无父级)</option>'].concat(
+      scheme.nodes.map(n => `<option value="${n.id}">${n.name}</option>`)
+    ).join('');
+
+    scheme.nodes.forEach(node => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="px-3 py-2 text-sm"><input class="w-full border rounded px-2 py-1" value="${node.name}" /></td>
+        <td class="px-3 py-2 text-sm"><select class="w-full border rounded px-2 py-1">${optionsHtml}</select></td>
+        <td class="px-3 py-2 text-sm">
+          <select class="border rounded px-2 py-1">
+            <option value="percent" ${node.type==='percent'?'selected':''}>百分比</option>
+            <option value="amount" ${node.type==='amount'?'selected':''}>定额</option>
+          </select>
+        </td>
+        <td class="px-3 py-2 text-sm"><input type="number" min="0" step="0.01" class="w-full border rounded px-2 py-1" value="${node.value}" /></td>
+        <td class="px-3 py-2 text-sm"><input type="number" min="1" step="1" class="w-full border rounded px-2 py-1" value="${node.priority}" /></td>
+        <td class="px-3 py-2 text-sm text-right">
+          <button class="px-2 py-1 text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+        </td>
+      `;
+      const [nameInput, parentSelect, typeSelect, valueInput, priInput, delBtn] = tr.querySelectorAll('input, select, button');
+      nameInput.addEventListener('input', e => node.name = e.target.value);
+      parentSelect.value = node.parentId || '';
+      parentSelect.addEventListener('change', e => node.parentId = e.target.value || null);
+      typeSelect.addEventListener('change', e => { node.type = e.target.value; renderNodes(); validateScheme(); });
+      valueInput.addEventListener('input', e => { node.value = parseFloat(e.target.value || 0); validateScheme(); });
+      priInput.addEventListener('input', e => node.priority = parseInt(e.target.value || 1));
+      delBtn.addEventListener('click', () => { scheme.nodes = scheme.nodes.filter(n => n.id !== node.id && n.parentId !== node.id); renderNodes(); validateScheme(); });
+      els.nodesBody.appendChild(tr);
+    });
+    updateGroupSummary();
+  }
+
+  function updateGroupSummary() {
+    // 计算每个父级的合计
+    const percentSum = {}; const amountSum = {};
+    scheme.nodes.forEach(n => {
+      const p = n.parentId || 'ROOT';
+      percentSum[p] = (percentSum[p]||0) + (n.type==='percent'?(n.value||0):0);
+      amountSum[p] = (amountSum[p]||0) + (n.type==='amount'?(n.value||0):0);
+    });
+    const lines = Object.keys(percentSum).map(pid => {
+      const name = pid==='ROOT' ? '根级' : (scheme.nodes.find(x => x.id===pid)?.name || pid);
+      const pct = percentSum[pid].toFixed(2);
+      const amt = amountSum[pid].toFixed(2);
+      const pctClass = percentSum[pid]>100 ? 'text-red-600' : 'text-green-600';
+      const amtClass = (scheme.ledgerTotal && amountSum[pid]>scheme.ledgerTotal) ? 'text-red-600':'text-green-600';
+      return `<div class="text-sm"><span class="font-medium">${name}</span>：子项比例合计 <span class="${pctClass}">${pct}%</span> ，子项定额合计 <span class="${amtClass}">¥ ${amt}</span></div>`;
+    }).join('');
+    els.groupSummary.innerHTML = lines || '<div class="text-sm text-gray-500">尚未添加账号</div>';
+  }
+
+  function validateScheme() {
+    const issues = [];
+    const percentSum = {}; const amountSum = {};
+    scheme.nodes.forEach(n => {
+      const p = n.parentId || 'ROOT';
+      percentSum[p] = (percentSum[p]||0) + (n.type==='percent'?(n.value||0):0);
+      amountSum[p] = (amountSum[p]||0) + (n.type==='amount'?(n.value||0):0);
+      // 同节点同时设置百分比与定额的提示（此简化版不支持同节点双类型）
+    });
+    Object.keys(percentSum).forEach(pid => {
+      if (percentSum[pid] > 100) {
+        const name = pid==='ROOT' ? '根级' : (scheme.nodes.find(x => x.id===pid)?.name || pid);
+        issues.push(`${name} 的子项比例合计超过100% (${percentSum[pid].toFixed(2)}%)`);
+      }
+    });
+    Object.keys(amountSum).forEach(pid => {
+      if (scheme.ledgerTotal && amountSum[pid] > scheme.ledgerTotal) {
+        const name = pid==='ROOT' ? '根级' : (scheme.nodes.find(x => x.id===pid)?.name || pid);
+        issues.push(`${name} 的子项定额合计超过账目总额 (¥ ${amountSum[pid].toFixed(2)} > ¥ ${scheme.ledgerTotal})`);
+      }
+    });
+    els.validateResult.innerHTML = issues.length ? issues.map(i => `<li>${i}</li>`).join('') : '<li>未发现问题</li>';
+    updateGroupSummary();
+  }
+
+  // 初始化示例数据
+  ['渠道-抖音','门店-杭州西湖','平台-服务费'].forEach(name => {
+    scheme.nodes.push({ id: 'N' + (scheme.nodes.length+1), name, parentId: null, type: 'percent', value: 0, priority: 1 });
+  });
+  renderNodes();
+  validateScheme();
+</script>
+</body>
+</html>

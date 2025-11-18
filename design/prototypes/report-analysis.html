@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>报表分析 - 智能分账系统</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6">
+    <!-- 标题与操作 -->
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">报表分析</h1>
+      <div class="space-x-2">
+      </div>
+    </div>
+    <div class="bg-gray-50 p-4 rounded-lg mb-6 text-left">
+      <div class="flex items-center gap-4 flex-wrap">
+        <div class="w-full md:w-auto">
+          <label class="text-sm text-gray-500">账目筛选</label>
+          <select id="filterLedger" class="mt-1 w-full md:w-60 border rounded px-3 py-2">
+            <option value="all">全部账目</option>
+            <option value="商品收入">商品收入</option>
+            <option value="退款">退款</option>
+            <option value="服务费">服务费</option>
+          </select>
+        </div>
+        <div class="w-full md:w-auto">
+          <label class="text-sm text-gray-500">时间维度</label>
+          <div class="mt-1 inline-flex rounded-lg border overflow-hidden">
+            <button id="timeBtnYear" class="px-3 py-2 bg-white">年度</button>
+            <button id="timeBtnMonth" class="px-3 py-2 bg-white">月度</button>
+            <button id="timeBtnCustom" class="px-3 py-2 bg-white">自选时间</button>
+          </div>
+        </div>
+        <div class="w-full md:w-auto">
+          <div id="customTimeInputs" class="hidden flex items-center gap-2">
+            <label class="text-sm text-gray-500">起止日期</label>
+            <div class="mt-0 flex gap-2">
+              <input id="dateStart" type="date" class="flex-1 border rounded px-2 py-2" />
+              <input id="dateEnd" type="date" class="flex-1 border rounded px-2 py-2" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium">总体分账趋势</h3>
+        <span class="text-sm text-gray-500">单位：万元</span>
+      </div>
+      <div id="trendBars" class="h-32 flex items-end space-x-1"></div>
+      <div id="trendRangeText" class="mt-2 text-xs text-gray-500"></div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium">账目金额横向对比</h3>
+        <span class="text-sm text-gray-500">单位：万元</span>
+      </div>
+      <div id="ledgerCompareBars" class="space-y-3"></div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div class="flex items-center justify之间 mb-4">
+        <h3 class="text-lg font-medium">账户所分金额横向对比</h3>
+        <span class="text-sm text-gray-500">单位：万元</span>
+      </div>
+      <div id="accountCompareBars" class="space-y-3"></div>
+    </div>
+
+    <script>
+      const tabButtons = [];
+      const tabContents = [];
+      let timeMode = 'month';
+      const trendData = {
+        year: { labels: ['2023','2024','2025'], values: [980, 1120, 1286], rangeText: '2023 ~ 2025' },
+        month: { labels: ['01','02','03','04','05','06','07','08','09','10','11','12'], values: [86,92,78,120,96,88,105,118,94,128,110,130], rangeText: '当年 01 ~ 12 月' },
+        custom: { labels: Array.from({length: 14}, (_,i)=>`D${i+1}`), values: [12,18,15,30,20,22,28,24,26,18,16,32,29,25], rangeText: '自选区间' }
+      };
+      const ledgerAllData = [
+        { name: '商品收入', amount: 1000 },
+        { name: '退款', amount: 120 },
+        { name: '服务费', amount: 200 }
+      ];
+      const accountAllData = [
+        { name: '门店-杭州西湖', amount: 328.6 },
+        { name: '渠道-抖音', amount: 256.3 },
+        { name: '门店-深圳南山', amount: 198.4 },
+        { name: '平台-服务费', amount: 122.1 }
+      ];
+
+      function setActiveTab(btn){
+        tabButtons.forEach(b=>b.classList.remove('border-indigo-500','text-indigo-600','font-semibold'));
+        tabContents.forEach(c=>c.classList.add('hidden'));
+        btn.classList.add('border-indigo-500','text-indigo-600','font-semibold');
+        const id = btn.getAttribute('data-tab');
+        document.getElementById(id).classList.remove('hidden');
+      }
+      function renderTrend(){
+        const data = timeMode==='year'?trendData.year:timeMode==='month'?trendData.month:trendData.custom;
+        const cont = document.getElementById('trendBars');
+        const max = Math.max(...data.values);
+        cont.innerHTML = data.values.map(v=>{
+          const h = Math.round((v/max)*100);
+          const shade = h>66?'bg-blue-500':h>40?'bg-blue-400':'bg-blue-300';
+          return `<div class="w-3 ${shade}" style="height:${h}%"></div>`;
+        }).join('');
+        document.getElementById('trendRangeText').textContent = data.rangeText;
+      }
+      function renderBars(containerId, items){
+        const max = Math.max(...items.map(x=>x.amount));
+        document.getElementById(containerId).innerHTML = items.map(x=>{
+          const pct = Math.round((x.amount/max)*100);
+          return `<div>
+            <div class="flex justify-between text-sm mb-1"><span>${x.name}</span><span>${x.amount.toFixed(1)} 万</span></div>
+            <div class="h-2 bg-gray-200 rounded"><div class="h-2 bg-indigo-500 rounded" style="width:${pct}%"></div></div>
+          </div>`;
+        }).join('');
+      }
+      function applyLedgerFilter(){
+        const v = document.getElementById('filterLedger').value;
+        const filtered = v==='all'?ledgerAllData:ledgerAllData.filter(x=>x.name===v);
+        renderBars('ledgerCompareBars', filtered);
+        const accountFiltered = (v==='all') ? accountAllData : accountAllData.filter(x=>{
+          if(v==='商品收入') return x.name==='门店-杭州西湖'||x.name==='渠道-抖音'||x.name==='门店-深圳南山';
+          if(v==='服务费') return x.name==='平台-服务费';
+          if(v==='退款') return false;
+          return false;
+        });
+        renderBars('accountCompareBars', accountFiltered);
+      }
+      function init(){
+        document.getElementById('timeBtnYear')?.addEventListener('click',()=>{timeMode='year';toggleTimeActive('timeBtnYear');hideCustomInputs();renderTrend();});
+        document.getElementById('timeBtnMonth')?.addEventListener('click',()=>{timeMode='month';toggleTimeActive('timeBtnMonth');hideCustomInputs();renderTrend();});
+        document.getElementById('timeBtnCustom')?.addEventListener('click',()=>{timeMode='custom';toggleTimeActive('timeBtnCustom');showCustomInputs();renderTrend();});
+        document.getElementById('filterLedger')?.addEventListener('change',applyLedgerFilter);
+        renderTrend();
+        applyLedgerFilter();
+        toggleTimeActive('timeBtnMonth');
+      }
+      function toggleTimeActive(id){
+        ['timeBtnYear','timeBtnMonth','timeBtnCustom'].forEach(k=>document.getElementById(k)?.classList.remove('bg-blue-600','text-white'));
+        document.getElementById(id)?.classList.add('bg-blue-600','text-white');
+      }
+      function showCustomInputs(){document.getElementById('customTimeInputs')?.classList.remove('hidden')}
+      function hideCustomInputs(){document.getElementById('customTimeInputs')?.classList.add('hidden')}
+      document.addEventListener('DOMContentLoaded', init);
+    </script>
+    
+
+    
+
+    
+
+    
+
+    
+  </div>
+</body>
+</html>

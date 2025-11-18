@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>立项管理（客户）</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-white">
+  <div class="p-4">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-xl font-bold">立项管理（客户）</h1>
+    </div>
+
+    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+      <label class="text-sm text-gray-500">项目名称</label>
+      <div class="mt-1 flex items-center gap-2">
+        <input id="filterName" type="text" placeholder="输入项目名称" class="flex-1 border rounded px-3 py-2" />
+        <button id="filterClear" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded">清空</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm">
+      <div class="overflow-auto border rounded">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="px-3 py-2 text-left">序号</th>
+              <th class="px-3 py-2 text-left">项目名称</th>
+              <th class="px-3 py-2 text-left">创建人</th>
+              <th class="px-3 py-2 text-left">创建时间</th>
+              <th class="px-3 py-2 text-left">操作</th>
+            </tr>
+          </thead>
+          <tbody id="clientProjectsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="signModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+    <div class="bg-white w-full max-w-5xl rounded-lg shadow-lg">
+      <div class="flex items-center justify-between px-4 py-3 border-b">
+        <div class="font-medium">协议签署</div>
+        <button id="signClose" class="text-gray-600 px-2 py-1"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="border rounded">
+          <div class="px-3 py-2 text-sm text-gray-600 border-b">已上传协议预览 / 下载</div>
+          <div class="p-3 space-y-3">
+            <div id="signViewerWrap" class="border rounded overflow-auto" style="height:400px"></div>
+            <div id="signDownloadWrap" class="text-sm"></div>
+          </div>
+        </div>
+        <div class="border rounded">
+          <div class="px-3 py-2 text-sm text-gray-600 border-b">拖拽或选择已签署协议（PDF）</div>
+          <div class="p-3">
+            <div id="signDropArea" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50">
+              <div class="text-sm text-gray-600">拖拽PDF到此或点击选择文件</div>
+              <div class="mt-2">
+                <button id="signFileSelect" class="px-3 py-1 bg-gray-100 rounded border">选择文件</button>
+                <input id="signFileInput" type="file" accept="application/pdf" class="hidden" />
+              </div>
+              <div id="signFileName" class="mt-2 text-sm text-gray-500">未选择文件</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-4 py-3 border-t">
+        <button id="signCancel" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded">取消</button>
+        <button id="signConfirm" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">确认上传</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let projects=[
+      {id:"PRJ-001",name:"十月渠道分账方案",creator:"张三",created:"2025-11-01 10:00"},
+      {id:"PRJ-002",name:"十一月门店分账",creator:"李四",created:"2025-11-05 09:30"},
+      {id:"PRJ-003",name:"平台服务费分账",creator:"王五",created:"2025-11-10 14:20"},
+      {id:"PRJ-004",name:"渠道联合分账",creator:"赵六",created:"2025-11-12 16:05"}
+    ];
+    try{
+      const local = JSON.parse(localStorage.getItem('allocation_projects')||'[]')||[];
+      if(Array.isArray(local)&&local.length){projects = projects.concat(local.map(p=>({id:p.id,name:p.name||p.id,creator:p.creator||'—',created:p.created||''})))}
+    }catch(e){}
+
+    function getDepositStatus(projectId){
+      try{
+        const map=JSON.parse(localStorage.getItem('deposit_payments')||'{}')||{};
+        const info=map[projectId];
+        return info&&info.status==='已缴纳' ? '已缴纳' : '未缴纳';
+      }catch(e){
+        return '未缴纳';
+      }
+    }
+    function opsHTML(p){
+      const status=getDepositStatus(p.id);
+      const dot=status==='未缴纳'?'<span class="inline-block w-2 h-2 bg-red-500 rounded-full ml-1"></span>':'';
+      return `<div class="space-x-2">
+        <button class="px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50" data-op="查看" data-id="${p.id}">查看</button>
+        <button class="px-2 py-1 rounded border border-green-200 text-green-700 hover:bg-green-50" data-op="协议签署" data-id="${p.id}">协议签署</button>
+        <button class="px-2 py-1 rounded border border-yellow-200 text-yellow-700 hover:bg-yellow-50" data-op="保证金缴纳" data-id="${p.id}">保证金缴纳${dot}</button>
+      </div>`;
+    }
+    function rowHTML(p,i){
+      return `<tr class="border-t">
+        <td class="px-3 py-2">${i+1}</td>
+        <td class="px-3 py-2">${p.name}</td>
+        <td class="px-3 py-2">${p.creator}</td>
+        <td class="px-3 py-2">${p.created}</td>
+        <td class="px-3 py-2">${opsHTML(p)}</td>
+      </tr>`
+    }
+    function render(list){
+      document.getElementById('clientProjectsBody').innerHTML=list.map((p,i)=>rowHTML(p,i)).join('');
+      document.querySelectorAll('#clientProjectsBody button').forEach(b=>{
+        b.onclick=function(){const op=this.dataset.op;const id=this.dataset.id; if(op==='查看'){window.location.href='../project-create.html?projectId='+encodeURIComponent(id)} else if(op==='协议签署'){openSignAgreement(id)} else if(op==='保证金缴纳'){window.location.href='./deposit-payment.html?projectId='+encodeURIComponent(id)}}
+      });
+    }
+    function applyFilter(){const kw=document.getElementById('filterName').value.trim();const list=kw?projects.filter(p=>p.name.includes(kw)):projects;render(list)}
+    document.getElementById('filterName').addEventListener('input',applyFilter);
+    document.getElementById('filterClear').addEventListener('click',()=>{document.getElementById('filterName').value='';applyFilter()});
+    render(projects);
+
+    let signProjectId=null; let signCurrentFile=null;
+    function openSignAgreement(projectId){signProjectId=projectId; signCurrentFile=null; setSignFile(null); renderExistingAgreement(); document.getElementById('signModal').classList.remove('hidden')}
+    function closeSignAgreement(){document.getElementById('signModal').classList.add('hidden')}
+    function setSignFile(f){const nameEl=document.getElementById('signFileName'); if(!f){signCurrentFile=null; nameEl.textContent='未选择文件'; return} signCurrentFile=f; nameEl.textContent='已选择：'+f.name}
+    function renderExistingAgreement(){
+      let map={}; try{map=JSON.parse(localStorage.getItem('allocation_agreements')||'{}')||{}}catch(e){}
+      const info=map[signProjectId]; const viewer=document.getElementById('signViewerWrap'); const dlWrap=document.getElementById('signDownloadWrap');
+      if(info&&info.url){viewer.innerHTML = `<iframe src="${info.url}" class="w-full" style="height:100%"></iframe>`; dlWrap.innerHTML = `<a class="text-blue-600" href="${info.url}" download>下载PDF</a>`} else {viewer.innerHTML = `<div class="h-full flex items-center justify-center text-gray-500">暂无已上传协议</div>`; dlWrap.innerHTML = `<span class="text-gray-400">下载PDF</span>`}
+    }
+    ;(function initSignEvents(){
+      const dropArea=document.getElementById('signDropArea'); const fileInput=document.getElementById('signFileInput'); const fileSelect=document.getElementById('signFileSelect');
+      ['dragenter','dragover'].forEach(evt=>dropArea.addEventListener(evt,(e)=>{e.preventDefault();e.stopPropagation();dropArea.classList.add('border-blue-400','bg-blue-50')}));
+      ['dragleave','drop'].forEach(evt=>dropArea.addEventListener(evt,(e)=>{e.preventDefault();e.stopPropagation();dropArea.classList.remove('border-blue-400','bg-blue-50')}));
+      dropArea.addEventListener('drop',(e)=>{const files=e.dataTransfer?.files; if(files&&files.length){setSignFile(files[0])}});
+      fileSelect.addEventListener('click',()=>fileInput.click());
+      fileInput.addEventListener('change',()=>{const f=fileInput.files&&fileInput.files[0]; setSignFile(f)});
+      document.getElementById('signCancel').onclick=()=>{signCurrentFile=null; fileInput.value=''; setSignFile(null); closeSignAgreement()};
+      document.getElementById('signClose').onclick=()=>{signCurrentFile=null; fileInput.value=''; setSignFile(null); closeSignAgreement()};
+      document.getElementById('signConfirm').onclick=()=>{
+        if(!signCurrentFile){alert('请选择要上传的PDF文件'); return}
+        const reader=new FileReader(); reader.onload=function(){ try{ let map=JSON.parse(localStorage.getItem('allocation_agreements')||'{}')||{}; map[signProjectId]={name:signCurrentFile.name,url:reader.result}; localStorage.setItem('allocation_agreements',JSON.stringify(map)); alert('上传成功'); closeSignAgreement(); }catch(err){ console.error(err); alert('上传失败') } }; reader.readAsDataURL(signCurrentFile)
+      }
+    })();
+  </script>
+</body>
+</html>

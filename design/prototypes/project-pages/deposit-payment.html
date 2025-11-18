@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>保证金缴纳</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-white">
+  <div class="p-4 max-w-4xl mx-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-xl font-bold">保证金缴纳</h1>
+      <a id="backLink" href="javascript:history.back()" class="text-blue-600"><i class="fas fa-arrow-left mr-1"></i>返回</a>
+    </div>
+    <div id="pid" class="text-sm text-gray-500 mb-4"></div>
+
+    <div class="bg-gray-50 rounded-lg p-4">
+      <div class="flex items-center justify-between">
+        <div class="text-sm text-gray-500">保证金数额</div>
+        <div id="amount" class="text-xl font-semibold">¥10,000</div>
+      </div>
+    </div>
+
+    <div id="content" class="mt-6"></div>
+  </div>
+  <script>
+    const pid=new URLSearchParams(location.search).get('projectId');
+    document.getElementById('pid').textContent = pid?('项目ID：'+pid):'';
+    const FIXED_DEPOSIT_AMOUNT=10000;
+    document.getElementById('amount').textContent='¥'+FIXED_DEPOSIT_AMOUNT.toLocaleString();
+    function getMap(){
+      try{ return JSON.parse(localStorage.getItem('deposit_payments')||'{}')||{} }catch(e){ return {} }
+    }
+    function setMap(m){ localStorage.setItem('deposit_payments',JSON.stringify(m)) }
+    function getStatus(){ const m=getMap(); const i=m[pid]; return i&&i.status==='已缴纳' ? '已缴纳' : '未缴纳' }
+    function renderPaid(){
+      const m=getMap(); const i=m[pid]||{};
+      document.getElementById('content').innerHTML = `
+        <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+          <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-600 text-2xl mr-3"></i>
+            <div>
+              <div class="font-semibold text-green-700">保证金缴纳成功</div>
+              <div class="text-sm text-gray-600 mt-1">支付方式：${i.method||'—'}，时间：${i.paidAt||'—'}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    function renderUnpaid(){
+      document.getElementById('content').innerHTML = `
+        <div class="bg-white border rounded-lg">
+          <div class="px-4 py-3 border-b text-sm text-gray-600">选择支付方式</div>
+          <div class="p-4 space-y-4">
+            <div class="flex items-center gap-4">
+              <label class="flex items-center gap-2"><input type="radio" name="pay" value="转账支付" class="pay-method" checked><span>转账支付</span></label>
+              <label class="flex items-center gap-2"><input type="radio" name="pay" value="微信支付" class="pay-method"><span>微信支付</span></label>
+              <label class="flex items-center gap-2"><input type="radio" name="pay" value="支付宝支付" class="pay-method"><span>支付宝支付</span></label>
+            </div>
+            <div id="methodContent" class="mt-2"></div>
+            <div class="flex items-center justify-end gap-2">
+              <button id="cancelBtn" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded">取消</button>
+              <button id="confirmBtn" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">确认支付</button>
+            </div>
+          </div>
+        </div>
+      `;
+      bindUnpaidEvents();
+    }
+    function updateMethodContent(val){
+      if(val==='转账支付'){
+        document.getElementById('methodContent').innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div class="flex items-center justify-between"><span>收款账户名</span><span>宝点科技有限公司</span></div>
+            <div class="flex items-center justify-between"><span>收款账号</span><span>6222 **** **** 8888</span></div>
+            <div class="flex items-center justify-between"><span>开户行</span><span>中国银行杭州分行</span></div>
+          </div>
+          <div class="mt-4">
+            <label class="block text-sm text-gray-600 mb-2">上传转账凭证</label>
+            <input id="voucherInput" type="file" class="border rounded px-3 py-2 w-full" accept="image/*,application/pdf">
+          </div>
+        `;
+      }else if(val==='微信支付'){
+        document.getElementById('methodContent').innerHTML = `
+          <div class="text-sm text-gray-600">请使用微信扫码完成支付</div>
+          <div class="mt-3">
+            <div class="w-40 h-40 bg-gray-100 border rounded flex items-center justify-center text-gray-400">二维码</div>
+          </div>
+        `;
+      }else{
+        document.getElementById('methodContent').innerHTML = `
+          <div class="text-sm text-gray-600">请使用支付宝扫码完成支付</div>
+          <div class="mt-3">
+            <div class="w-40 h-40 bg-gray-100 border rounded flex items-center justify-center text-gray-400">二维码</div>
+          </div>
+        `;
+      }
+    }
+    function bindUnpaidEvents(){
+      const radios=document.querySelectorAll('.pay-method');
+      let current=Array.from(radios).find(r=>r.checked)?.value||'转账支付';
+      updateMethodContent(current);
+      radios.forEach(r=>r.addEventListener('change',()=>{ current=r.value; updateMethodContent(current) }));
+      document.getElementById('cancelBtn').onclick=()=>{ history.back() };
+      document.getElementById('confirmBtn').onclick=()=>{
+        const m=getMap(); m[pid]={status:'已缴纳', amount: FIXED_DEPOSIT_AMOUNT, method: current, paidAt: new Date().toISOString()}; setMap(m); renderPaid();
+      };
+    }
+    function render(){ if(!pid){ document.getElementById('content').innerHTML=''; return } const s=getStatus(); if(s==='已缴纳'){ renderPaid() } else { renderUnpaid() } }
+    render();
+  </script>
+</body>
+</html>

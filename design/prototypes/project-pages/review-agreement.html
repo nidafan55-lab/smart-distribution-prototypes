@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>协议审核</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-white">
+  <div class="p-4">
+    <div class="flex items-center justify-between border-b pb-3">
+      <div id="pid" class="text-sm text-gray-500"></div>
+    </div>
+
+    <div class="mt-4 bg-gray-50 rounded-lg p-4 flex items-center justify-between">
+      <div class="flex items-center gap-6">
+        <div>
+          <div class="text-sm text-gray-500">应收协议</div>
+          <div id="summaryTotal" class="text-xl font-semibold">3份</div>
+        </div>
+        <div>
+          <div class="text-sm text-gray-500">未收协议</div>
+          <div id="summaryMissing" class="text-xl font-semibold text-red-500">1份</div>
+        </div>
+      </div>
+      <button id="btnRemind" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text白色 rounded"><i class="fas fa-bell mr-2"></i>发送提醒</button>
+    </div>
+
+    <div class="mt-6 font-semibold">协议列表</div>
+    <div id="agreementsList" class="mt-3 space-y-4"></div>
+  </div>
+  <script>
+    const pid=new URLSearchParams(location.search).get('projectId');
+    document.getElementById('pid').textContent = pid?('项目ID：'+pid):'';
+    const items=[
+      {name:'渠道-抖音', uploadedAt:'2023-10-18 15:30:25', status:'待审核', key:'douyin'},
+      {name:'门店-杭州西湖', uploadedAt:'2023-10-17 09:45:12', status:'待审核', key:'xihu'},
+      {name:'平台-服务费', uploadedAt:null, status:'未上传', key:'servicefee'}
+    ];
+    const total=items.length;
+    const missing=items.filter(i=>!i.uploadedAt).length;
+    document.getElementById('summaryTotal').textContent=total+'份';
+    document.getElementById('summaryMissing').textContent=missing+'份';
+    function cardHTML(i){
+      const has=i.uploadedAt;
+      const statusEl= has ? `<span class="text-green-600"><i class="fas fa-check-circle mr-1"></i>${i.status}</span>` : `<span class="text-red-600"><i class="fas fa-exclamation-circle mr-1"></i>${i.status}</span>`;
+      const dl = has ? `<a class="text-blue-600" href="#">下载PDF</a>` : `<span class="text-gray-400"><i class="fas fa-download mr-1"></i>下载PDF</span>`;
+      const btn = has ? `<button class="approve px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded" data-key="${i.key}">审核通过</button>` : `<button class="px-3 py-2 bg-gray-300 text-gray-600 rounded" disabled>审核通过</button>`;
+      return `<div class="border rounded-lg p-4 flex items-center justify-between">
+        <div>
+          <div class="font-medium">${i.name}</div>
+          <div class="text-sm text-gray-500 mt-1">${has?('上传时间：'+i.uploadedAt):'未上传'}</div>
+          <div class="mt-2">${dl}</div>
+        </div>
+        <div class="flex items-center gap-4">${statusEl}${btn}</div>
+      </div>`
+    }
+    function render(){document.getElementById('agreementsList').innerHTML=items.map(cardHTML).join('');
+      document.querySelectorAll('.approve').forEach(b=>b.onclick=()=>{b.textContent='已通过';b.classList.remove('bg-green-600','hover:bg-green-700');b.classList.add('bg-green-300');b.disabled=true});
+    }
+    document.getElementById('btnRemind').onclick=()=>alert('提醒已发送');
+    render();
+  </script>
+</body>
+</html>

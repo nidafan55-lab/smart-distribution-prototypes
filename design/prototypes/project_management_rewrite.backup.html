@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目管理 - 分账系统</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    .modal {
+      transition: opacity 0.25s ease;
+      /* 让弹窗层级高于抽屉（drawer 的 z-index 为 1000） */
+      z-index: 1100;
+    }
+    /* 提升弹窗覆盖层与容器层级，确保处于最上层 */
+    .modal .modal-overlay { z-index: 1100; }
+    .modal .modal-container { z-index: 1101; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .table-fixed {
+      table-layout: fixed;
+    }
+    
+    /* 右侧抽屉样式 */
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 40%;
+      height: 100%;
+      background-color: white;
+      box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .drawer.open {
+      right: 0;
+    }
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      display: none;
+    }
+    .drawer-overlay.open {
+      display: block;
+    }
+    
+    /* 思维导图样式 */
+    .mindmap-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      overflow: auto;
+    }
+    .mindmap-central-node {
+      position: relative;
+      z-index: 1;
+      background: #111827;
+      color: white;
+      padding: .75rem 1.5rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .mindmap-branches {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .mindmap-branch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .mindmap-node {
+      position: relative;
+      z-index: 1;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      padding: .5rem 1rem;
+      border-radius: .5rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .mindmap-children {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 1.5rem;
+    }
+    .mindmap-links {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    /* 添加抽屉动画效果 */
+    .drawer {
+      transition: right 0.3s ease-in-out;
+    }
+    .drawer-overlay {
+      transition: opacity 0.3s ease-in-out;
+      opacity: 0;
+    }
+    .drawer-overlay.open {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="container mx-auto px-4 py-6">
+    <!-- 页面头部 -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">项目管理</h1>
+      <a href="allocation-mindmap.html?from=pm" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm flex items-center">
+        <i class="fas fa-plus mr-2"></i>新增分账项目
+      </a>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+          <div class="rounded-full bg-blue-100 p-3 mr-4">
+            <i class="fas fa-project-diagram text-blue-600 text-xl"></i>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">项目总数</p>
+            <p class="text-xl font-bold">24</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+          <div class="rounded-full bg-yellow-100 p-3 mr-4">
+            <i class="fas fa-clock text-yellow-600 text-xl"></i>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">待审核</p>
+            <p class="text-xl font-bold">5</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+          <div class="rounded-full bg-green-100 p-3 mr-4">
+            <i class="fas fa-check-circle text-green-600 text-xl"></i>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">已完成</p>
+            <p class="text-xl font-bold">16</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+          <div class="rounded-full bg-red-100 p-3 mr-4">
+            <i class="fas fa-exclamation-circle text-red-600 text-xl"></i>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">异常</p>
+            <p class="text-xl font-bold">3</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 筛选器 -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">项目状态</label>
+          <select class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">全部</option>
+            <option value="pending">待审核</option>
+            <option value="approved">已审核</option>
+            <option value="completed">已完成</option>
+            <option value="error">异常</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">创建时间</label>
+          <input type="date" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">项目名称</label>
+          <input type="text" placeholder="请输入项目名称" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex items-end">
+          <button class="bg-blue-600 hover:bg-blue-700 text白色 font-medium py-2 px-4 rounded-md shadow-sm mr-2">
+            <i class="fas fa-search mr-1"></i>查询
+          </button>
+          <button class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md shadow-sm">
+            <i class="fas fa-redo-alt mr-1"></i>重置
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 项目列表表格 -->
+    <div class="bg白色 rounded-lg shadow overflow-hidden mb-6">
+      <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-lg font-medium text-gray-800">项目列表</h2>
+        <div>
+          <button class="bg-green-600 hover:bg-green-700 text白色 font-medium py-1.5 px-3 rounded-md shadow-sm text-sm mr-2">
+            <i class="fas fa-file-excel mr-1"></i>导出
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 table-fixed">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                序号
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                项目名称
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                创建人
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                创建时间
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                状态
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg白色 divide-y divide-gray-200" id="projectTableBody">
+            <!-- 示例数据将通过JavaScript动态生成 -->
+          </tbody>
+        </table>
+      </div>
+      <div class="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+        <div class="text-sm text-gray-500">
+          显示 <span class="font-medium">1</span> 到 <span class="font-medium">10</span> 条，共 <span class="font-medium">24</span> 条
+        </div>
+        <div class="flex-1 flex justify-center">
+          <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg白色 text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <span class="sr-only">上一页</span>
+              <i class="fas fa-chevron-left"></i>
+            </a>
+            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600 hover:bg-blue-100">
+              1
+            </a>
+            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg白色 text-sm font-medium text-gray-500 hover:bg-gray-50">
+              2
+            </a>
+            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg白色 text-sm font-medium text-gray-500 hover:bg-gray-50">
+              3
+            </a>
+            <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg白色 text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <span class="sr-only">下一页</span>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          </nav>
+        </div>
+        <div class="text-sm text-gray-500">
+          每页 
+          <select class="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            <option>10</option>
+            <option>20</option>
+            <option>50</option>
+          </select>
+          条
+        </div>
+      </div>
+    </div>
+
+    <!-- 模态窗口 - 上传分账协议 -->
+    <div id="uploadAgreementModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 hidden">
+      <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+      <div class="modal-container bg白色 w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto">
+        <div class="modal-content py-4 text-left px-6">
+          <div class="flex justify-between items-center pb-3">
+            <p class="text-lg font-bold">上传分账协议</p>
+            <div class="modal-close cursor-pointer z-50">
+              <i class="fas fa-times"></i>
+            </div>
+          </div>
+          <div class="my-4">
+            <iframe id="uploadModalFrame" src="" class="w-full h-[60vh] bg白色 rounded"></iframe>
+          </div>
+          <div class="flex justify-end pt-2">
+            <button class="modal-close px-4 bg-gray-200 p-2 rounded-md text-gray-600 hover:bg-gray-300 mr-2">取消</button>
+            <button class="px-4 bg-blue-600 p-2 rounded-md text白色 hover:bg-blue-700">确认上传</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧抽屉 - 查看分账协议 -->
+    <div id="viewAgreementDrawer" class="drawer">
+      <div class="p-6">
+        <div class="flex justify-between items-center pb-3 border-b">
+          <p class="text-lg font-bold">分账协议详情</p>
+          <div class="drawer-close cursor-pointer z-50">
+            <i class="fas fa-times"></i>
+          </div>
+        </div>
+        <div class="my-4">
+          <iframe id="viewDrawerFrame" src="" class="w-full h-[60vh] bg白色 rounded"></iframe>
+        </div>
+        <div class="my-4 hidden">
+          <div class="bg-gray-100 p-4 rounded-md">
+            <h3 class="font-medium mb-2">项目基本信息</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-500">项目名称</p>
+                <p class="text-sm">2023年Q3营销活动分账</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">创建时间</p>
+                <p class="text-sm">2023-07-15 14:30:25</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">创建人</p>
+                <p class="text-sm">张三</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">状态</p>
+                <p class="text-sm"><span class="text-green-600">已审核</span></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <h3 class="font-medium mb-2">账目表</h3>
+            <div class="border border-gray-300 rounded-md overflow-hidden">
+              <table class="min-w-full">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="py-2 px-4 border-b text-left">账目</th>
+                    <th class="py-2 px-4 border-b text-right">账目总额</th>
+                    <th class="py-2 px-4 border-b text-right">保证金</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="py-2 px-4 border-b">
+                      商品收入 <span class="text-blue-600">[当前]</span>
+                    </td>
+                    <td class="py-2 px-4 border-b text-right">0</td>
+                    <td class="py-2 px-4 border-b text-right">0</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 px-4 border-b">退款</td>
+                    <td class="py-2 px-4 border-b text-right">0</td>
+                    <td class="py-2 px-4 border-b text-right">0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <h3 class="font-medium mb-2">分账树状预览图</h3>
+            <div class="border border-gray-300 rounded-md p-4 bg白色">
+              <div class="mindmap-container">
+                <div class="mindmap-central-node">未命名方案</div>
+                <div class="mindmap-branches">
+                  <div class="mindmap-branch">
+                    <div class="mindmap-node">渠道-抖音 · P1:0%</div>
+                    <div class="mindmap-children">
+                      <div class="mindmap-branch">
+                        <div class="mindmap-node">平台-服务费 · P1:0%</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mindmap-branch">
+                    <div class="mindmap-node">门店-杭州西湖 · P1:0%</div>
+                  </div>
+                </div>
+                <div class="mindmap-links">
+                  <svg width="100%" height="100%">
+                    <!-- 中心节点到渠道-抖音的连接线 -->
+                    <path d="M250,50 C250,80 150,100 150,130" stroke="#4299e1" stroke-width="2" fill="none"></path>
+                    <!-- 中心节点到门店-杭州西湖的连接线 -->
+                    <path d="M250,50 C250,80 350,100 350,130" stroke="#4299e1" stroke-width="2" fill="none"></path>
+                    <!-- 渠道-抖音到平台-服务费的连接线 -->
+                    <path d="M150,150 C150,170 150,180 150,200" stroke="#4299e1" stroke-width="2" fill="none"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <h3 class="font-medium mb-2">协议文件</h3>
+            <div class="border border-gray-300 rounded-md p-3 flex items-center justify-between">
+              <div class="flex items-center">
+                <i class="far fa-file-pdf text-red-500 text-xl mr-2"></i>
+                <span>营销活动分账协议.pdf</span>
+              </div>
+              <button class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa-download mr-1"></i>下载
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 右侧抽屉 - 协议审核 -->
+    <div id="reviewAgreementDrawer" class="drawer">
+      <div class="drawer-content px-8">
+        <div class="flex justify-between items-center border-b pb-4">
+          <h2 class="text-xl font-bold">协议审核</h2>
+          <button onclick="hideDrawer('reviewAgreementDrawer')" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mt-4">
+          <iframe id="reviewDrawerFrame" src="" class="w-full h-[60vh] bg白色 rounded"></iframe>
+        </div>
+        
+        <!-- 协议汇总信息 -->
+        <div class="mt-6 bg-gray-50 p-6 rounded-lg">
+          <div class="flex justify之间 items-center">
+            <div class="flex space-x-12">
+              <div>
+                <p class="text-gray-500">应收协议</p>
+                <p class="font-medium text-lg">3份</p>
+              </div>
+              <div>
+                <p class="text-gray-500">未收协议</p>
+                <p class="font-medium text-lg text-red-500">1份</p>
+              </div>
+            </div>
+            <button class="bg-blue-500 hover:bg-blue-600 text白色 px-4 py-2 rounded">
+              <i class="far fa-bell mr-1"></i>发送提醒
+            </button>
+          </div>
+        </div>
+        
+        <!-- 协议列表 -->
+        <div class="mt-8">
+          <h3 class="text-lg font-semibold mb-4">协议列表</h3>
+          
+          <!-- 渠道-抖音 -->
+          <div class="border rounded-lg p-6 mb-4">
+            <div class="flex justify-between items-center mb-3">
+              <div>
+                <p class="font-medium">渠道-抖音</p>
+                <p class="text-sm text-gray-500 mt-1">上传时间: 2023-10-18 15:30:25</p>
+              </div>
+              <div class="flex items-center">
+                <span class="text-green-500 mr-2"><i class="fas fa-check-circle"></i> 待审核</span>
+              </div>
+            </div>
+            <div class="flex justify-between mt-3">
+              <button class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa-download mr-1"></i>下载PDF
+              </button>
+              <button id="approveBtn1" onclick="approveAgreement(this, 'status1')" class="bg-green-500 hover:bg-green-600 text白色 px-4 py-1 rounded text-sm">
+                <i class="fas fa-check mr-1"></i>审核通过
+              </button>
+            </div>
+          </div>
+          
+          <!-- 门店-杭州西湖 -->
+          <div class="border rounded-lg p-6 mb-4">
+            <div class="flex justify-between items-center mb-3">
+              <div>
+                <p class="font-medium">门店-杭州西湖</p>
+                <p class="text-sm text-gray-500 mt-1">上传时间: 2023-10-17 09:45:12</p>
+              </div>
+              <div class="flex items-center">
+                <span id="status2" class="text-green-500 mr-2"><i class="fas fa-check-circle"></i> 待审核</span>
+              </div>
+            </div>
+            <div class="flex justify-between mt-3">
+              <button class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa下载 mr-1"></i>下载PDF
+              </button>
+              <button id="approveBtn2" onclick="approveAgreement(this, 'status2')" class="bg-green-500 hover:bg-green-600 text白色 px-4 py-1 rounded text-sm">
+                <i class="fas fa-check mr-1"></i>审核通过
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="drawerOverlay" class="drawer-overlay"></div>
+  </div>
+
+  <script>
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `fixed top-4 right-4 px-4 py-2 rounded shadow-lg z-50 ${
+        type === 'error' ? 'bg-red-500 text白色' : 
+        type === 'success' ? 'bg-green-500 text白色' : 
+        'bg-blue-500 text白色'
+      }`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => { document.body.removeChild(toast); }, 500);
+      }, 3000);
+    }
+
+    function showDrawer(id) {
+      const drawer = document.getElementById(id);
+      const overlay = document.getElementById('drawerOverlay');
+      if (drawer) drawer.classList.add('open');
+      if (overlay) overlay.classList.add('open');
+    }
+    function hideDrawer(id) {
+      const drawer = document.getElementById(id);
+      const overlay = document.getElementById('drawerOverlay');
+      if (drawer) drawer.classList.remove('open');
+      if (overlay) overlay.classList.remove('open');
+    }
+
+    function openDepositDrawer(project) {
+      const depositInfo = { total: 30000, paid: 22000, pending: 8000 };
+      document.getElementById('depositTotal').textContent = '¥' + depositInfo.total.toLocaleString();
+      document.getElementById('depositPaid').textContent = '¥' + depositInfo.paid.toLocaleString();
+      document.getElementById('depositPending').textContent = '¥' + depositInfo.pending.toLocaleString();
+      showDrawer('depositDrawer');
+    }
+    function openAccountAuditDrawer(project) {
+      const accounts = [
+        { name: '渠道-抖音', required: 10000, paid: 9000 },
+        { name: '门店-杭州西湖', required: 8000, paid: 8000 },
+        { name: '平台-服务费', required: 5000, paid: 3000 },
+      ];
+      const tbody = document.getElementById('accountAuditTableBody');
+      tbody.innerHTML = '';
+      accounts.forEach((acc, idx) => {
+        const pending = acc.required - acc.paid;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 px-4 border-b text-sm">${acc.name}</td>
+          <td class="py-2 px-4 border-b text-right text-sm">¥${acc.required.toLocaleString()}</td>
+          <td class="py-2 px-4 border-b text-right text-sm ${pending>0?'text-red-600':'text-green-600'}">${pending>0?('¥'+pending.toLocaleString()):'—'}</td>
+          <td class="py-2 px-4 border-b text-sm">${pending>0?'<span class="text-red-600">未交够</span>':'<span class="text-green-600">已交够</span>'}</td>
+          <td class="py-2 px-4 border-b text-right text-sm">
+            <button class="text-blue-600 hover:text-blue-800 mr-2" onclick="openEditDepositModal(${idx})"><i class="far fa-edit mr-1"></i>编辑</button>
+            ${pending>0?
+              '<button class="text-blue-600 hover:text-blue-800" onclick="submitDepositAudit()"><i class="far fa-paper-plane mr-1"></i>发起补缴审核</button>' :
+              '<button class="text-green-600 hover:text-green-800" onclick="approveAccount()"><i class="fas fa-check mr-1"></i>审核通过</button>'
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      window.accountAuditData = accounts;
+      window.currentAuditProject = project;
+      showDrawer('accountAuditDrawer');
+    }
+    function submitDepositAudit() { showToast('已提交补缴审核', 'success'); }
+    function approveAccount() { showToast('该账号保证金审核通过', 'success'); }
+
+    function openEditDepositModal(index) {
+      if (!Array.isArray(window.accountAuditData)) return;
+      window.selectedAccountIndex = index;
+      const acc = window.accountAuditData[index];
+      const nameEl = document.getElementById('editAccountName');
+      const requiredEl = document.getElementById('editRequiredAmount');
+      const inputEl = document.getElementById('editDepositAmount');
+      if (nameEl) nameEl.textContent = acc.name;
+      if (requiredEl) requiredEl.textContent = '¥' + acc.required.toLocaleString();
+      if (inputEl) inputEl.value = acc.paid;
+      showModal('editDepositModal');
+    }
+    function saveEditedDeposit() {
+      const inputEl = document.getElementById('editDepositAmount');
+      const value = parseFloat(inputEl and inputEl.value ? inputEl.value : '0');
+      const idx = window.selectedAccountIndex;
+      if (isNaN(value) || idx == null || !Array.isArray(window.accountAuditData)) {
+        showToast('填写的保证金额不合法', 'error');
+        return;
+      }
+      window.accountAuditData[idx].paid = Math.max(value, 0);
+      renderAccountAuditTable();
+      const closeBtn = document.querySelector('#editDepositModal .modal-close');
+      if (closeBtn) closeBtn.click();
+      showToast('保证金额已更新', 'success');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      checkUrlParamsAndUpdateStatus();
+      renderProjectTable();
+    });
+  </script>
+</body>
+</html>
