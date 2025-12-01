@@ -1,0 +1,892 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>创建分账项目</title><link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"><style>.canvas{overflow:auto;min-height:360px;border:1px solid #e5e7eb;border-radius:.5rem;padding:12px}.tree ul{position:relative;padding-left:18px;margin-left:6px}.tree ul:before{content:"";position:absolute;top:0;bottom:0;left:8px;width:1px;background:#e5e7eb}.tree li{position:relative;margin:8px 0}.tree li:before{content:"";position:absolute;left:8px;top:14px;width:10px;height:1px;background:#e5e7eb}.node{background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;padding:8px;box-shadow:0 1px 2px rgba(0,0,0,.04);min-width:240px}.node.invalid{border-color:#ef4444}.node .ops button{padding:2px 6px}.drop{outline:2px dashed transparent}.drop.dragover{outline-color:#3b82f6}.palette-item{cursor:grab}
+/* Rule hint box sidebar */
+.rule-hint-box{position:sticky;top:12px;align-self:flex-start}
+/* Mindmap Preview Styles (vertical top-down) */
+.mindmap-container{position:relative;display:flex;flex-direction:column;align-items:center;padding:2rem;overflow:auto}.mindmap-central-node{position:relative;z-index:1;background:#111827;color:white;padding:.75rem 1.5rem;border-radius:9999px;font-weight:600;flex-shrink:0}.mindmap-branches{display:flex;flex-direction:row;align-items:flex-start;gap:1.5rem;margin-top:2rem}.mindmap-branch{display:flex;flex-direction:column;align-items:center;gap:1.5rem}.mindmap-node{position:relative;z-index:1;background:#f9fafb;border:1px solid #e5e7eb;padding:.5rem 1rem;border-radius:.5rem;white-space:nowrap;flex-shrink:0}.mindmap-children{display:flex;flex-direction:row;align-items:flex-start;gap:1.5rem}.mindmap-links{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+
+/* 底部固定按钮样式 */
+.bottom-action-buttons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  padding: 1rem;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  display: none;
+  justify-content: center;
+  gap: 1rem;
+  z-index: 100;
+}
+/* 审核模式样式 */
+body.review-mode .bottom-action-buttons {
+  display: flex;
+}
+</style>
+</head><body class="bg-gray-100 p-4"><div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6"><div class="flex items-center justify-between mb-4"><div><h1 id="pageTitle" class="text-2xl font-bold">创建分账项目</h1><p id="pageDescription" class="text-sm text-gray-500">拖拽账号到画布添加；节点间拖拽可变更父子关系；支持设置百分比/定额与优先级</p></div><div class="space-x-2">
+<!-- 普通模式下的按钮 -->
+<div id="normalModeButtons">
+  
+</div></div></div><div class="p-4 rounded-lg mb-4 space-y-6">
+  <div class="text-sm font-medium text-gray-700 mb-2">项目名称</div>
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+    <div class="md:col-span-4">
+      <input id="schemeName" class="mt-1 w-full border rounded px-3 py-2" placeholder="例如：10月渠道分账方案">
+    </div>
+  </div>
+  
+  <div class="text-sm font-medium text-gray-700 mb-2">项目规则</div>
+  <div class="mb-2 flex items-center gap-4">
+    <label class="inline-flex items-center"><input type="radio" name="ruleSource" id="ruleSourceNew" value="new" checked><span class="ml-2">新增规则</span></label>
+    <label class="inline-flex items-center"><input type="radio" name="ruleSource" id="ruleSourceExisting" value="existing"><span class="ml-2">选择现有规则</span></label>
+    <div id="ruleExistingSelectCont" class="hidden inline-flex items-center border rounded-lg overflow-hidden">
+      <span class="px-3 py-2 text-sm text-gray-900 font-medium">规则选择</span>
+      <select id="ruleExistingSelect" class="px-3 py-2 text-sm focus:outline-none">
+        <option value="">请选择</option>
+      </select>
+    </div>
+  </div>
+  <div id="ruleEditorFields" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+    <div class="md:col-span-4">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">规则名称</span>
+        <input id="ruleCfgName" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none" placeholder="请输入规则名称">
+      </div>
+    </div>
+    <div class="md:col-span-3">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">项目类型</span>
+        <select id="ruleCfgType" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none">
+          <option value="current">活期项目</option>
+          <option value="fixed">定期项目</option>
+        </select>
+      </div>
+    </div>
+    <div class="md:col-span-5">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">生效时间</span>
+        <input id="ruleCfgStart" type="datetime-local" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none">
+      </div>
+    </div>
+    <div id="ruleCfgEndCont" class="md:col-span-5 hidden">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">失效时间</span>
+        <input id="ruleCfgEnd" type="datetime-local" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none">
+      </div>
+    </div>
+  </div>
+  <div class="text-sm font-medium text-gray-700 mb-2">结算设置</div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div id="projectCurrentSettlementWrap">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">结算方式</span>
+        <select id="projectCurrentSettlementType" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none"></select>
+      </div>
+      <div id="projectCurrentSettlementFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3"></div>
+    </div>
+    <div id="projectFixedSettlementWrap">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">结算方式</span>
+        <select id="projectFixedSettlementType" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none"></select>
+      </div>
+      <div id="projectFixedSettlementFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3"></div>
+    </div>
+  </div>
+  <div class="text-sm font-medium text-gray-700 mb-2">账目设置</div>
+  <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center mb-2">
+    <div class="md:col-span-4">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">账目类型</span>
+        <select id="ledgerScopeType" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none">
+          <option value="single">单门店账目</option>
+          <option value="multi">多门店账目</option>
+        </select>
+      </div>
+    </div>
+    <div class="md:col-span-8">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">指定门店</span>
+        <button id="btnPickStores" class="px-3 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded">添加门店</button>
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center justify-between mb-1">
+    <div class="text-sm font-medium text-gray-700">已选门店</div>
+    <div id="selectedStoresCount" class="text-xs text-gray-500">0 个</div>
+  </div>
+  <div id="selectedStores" class="flex flex-wrap gap-2 mb-2"></div>
+  <div class="mb-2 text-left space-x-2">
+    <button id="btnLedgerAdd" class="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded"><i class="fas fa-plus mr-1"></i>新增账目</button>
+    <button id="btnBatchEditTerminals" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">批量编辑终端</button>
+  </div>
+  <div>
+    <div class="overflow-auto border rounded">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="text-center px-3 py-2 w-10"><input type="checkbox" id="ledgerSelectAll"></th>
+            <th class="text-left px-3 py-2">账目名称</th>
+            <th class="text-left px-3 py-2">终端</th>
+            <th class="text-center px-3 py-2">操作</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerTableBody"></tbody>
+      </table>
+    </div>
+    <div id="ledgerEmptyHint" class="text-xs text-gray-500 mt-2">尚未添加账目</div>
+  </div>
+  <div class="text-xs text-gray-500">提示：每个父级的子项 百分比≤100%、定额≤账目总额</div>
+</div>
+<div class="text-sm font-medium text-gray-700 mb-2">账户设置</div>
+<div id="editorView" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+  <div class="md:col-span-1 hidden">
+    <h3 class="text-lg font-medium mb-2">账号库（拖拽到右侧画布）</h3>
+    <input id="search" class="w-full border rounded px-2 py-1 mb-2" placeholder="搜索账号">
+    <div id="palette" class="space-y-2">
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">星力展厅店-店长</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">宝点数字体验店-店长</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">宝点数字体验店-店长</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">星力展厅店-店长</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">平台-服务费</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">代理-华东大区</div>
+    </div>
+  </div>
+  <div class="md:col-span-3">
+    <h3 class="text-lg font-medium mb-2">编辑分账账户</h3>
+    <!-- 顶部仅保留视图 Tab -->
+    <div class="flex items-start justify-start mb-2">
+      <div id="viewTabs" class="inline-flex rounded-lg border overflow-hidden">
+        <button id="tabEdit" class="px-3 py-1 bg-blue-500 text-white">编辑模式</button>
+        <button id="tabPreview" class="px-3 py-1">预览模式</button>
+      </div>
+    </div>
+    <!-- 主体改为左右两列：左侧编辑区，右侧规则提示（编辑模式显示，预览隐藏） -->
+    <!--
+     <div id="ruleHintBox" class="rule-hint-box w-80 bg-blue-50 border border-blue-200 rounded p-3 text-sm">
+        <div class="font-medium text-blue-700 mb-2">
+          <i class="fas fa-lightbulb mr-1"></i>规则提示
+        </div>
+    <!修改入口：下方列表为固定提示文案，直接编辑即可 -->
+        <!--<ul class="list-disc list-inside text-blue-700 space-y-1">
+          <li>父级可设置保证金；当前为展示用途，参与计算规则待确认。</li>
+          <li>子项分配：百分比合计≤100%，定额合计≤对应父级账目总额。</li>
+          <li>优先级数字越小越先分配；同级优先级按输入顺序参与。</li>
+          <li>切换“树状预览”可查看纵向连线与层次。</li>
+        </ul>
+      </div>
+    -->
+    <div class="md:flex gap-4">
+      <div class="flex-1 min-w-0">
+        <div id="canvas" class="canvas tree drop">
+          <ul id="root" class="drop"></ul>
+        </div>
+        <div id="summary" class="mt-3 text-sm"></div>
+        <div class="bg-yellow-50 border border-yellow-200 rounded p-3 mt-3">
+          <div class="flex items-center mb-1">
+            <i class="fas fa-info-circle text-yellow-600 mr-2"></i>
+            <span class="font-medium">校验结果</span>
+          </div>
+          <ul id="issues" class="list-disc list-inside text-yellow-700 text-sm"></ul>
+        </div>
+        <div id="preview" class="hidden p-4"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- 门店选择弹窗 -->
+<div id="storePickerModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h4 class="text-lg font-medium">选择门店</h4>
+      <button id="storePickerClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="storePickerList" class="max-h-60 overflow-auto border rounded p-2 space-y-1"></div>
+    <div class="flex items-center justify-between mt-3">
+      <div class="space-x-2">
+        <button id="storePickerSelectAll" class="text-blue-600 text-sm">全选</button>
+        <button id="storePickerClear" class="text-gray-600 text-sm">清空</button>
+      </div>
+      <div class="space-x-2">
+        <button id="storePickerCancel" class="px-3 py-1 bg-gray-200 rounded">取消</button>
+        <button id="storePickerConfirm" class="px-3 py-1 bg-blue-600 text-white rounded">确定</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- 批量选择账目弹窗 -->
+<div id="accountPickerModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h4 class="text-lg font-medium">选择账目</h4>
+      <button id="accountPickerClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="accountPickerList" class="max-h-60 overflow-auto border rounded p-2 space-y-1"></div>
+    <div class="flex items-center justify-between mt-3">
+      <div class="space-x-2">
+        <button id="accountPickerSelectAll" class="text-blue-600 text-sm">全选</button>
+        <button id="accountPickerClear" class="text-gray-600 text-sm">清空</button>
+      </div>
+      <div class="space-x-2">
+        <button id="accountPickerCancel" class="px-3 py-1 bg-gray-200 rounded">取消</button>
+        <button id="accountPickerConfirm" class="px-3 py-1 bg-blue-600 text-white rounded">确定</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- 终端选择弹窗 -->
+<div id="terminalPickerModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h4 class="text-lg font-medium">选择终端</h4>
+      <button id="terminalPickerClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="terminalPickerList" class="grid grid-cols-2 gap-2 max-h-60 overflow-auto border rounded p-2"></div>
+    <div class="flex items-center justify-between mt-3">
+      <div class="space-x-2">
+        <button id="terminalPickerSelectAll" class="text-blue-600 text-sm">全选</button>
+        <button id="terminalPickerClear" class="text-gray-600 text-sm">清空</button>
+      </div>
+      <div class="space-x-2">
+        <button id="terminalPickerCancel" class="px-3 py-1 bg-gray-200 rounded">取消</button>
+        <button id="terminalPickerConfirm" class="px-3 py-1 bg-blue-600 text-white rounded">确定</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>const scheme={name:'',rule:'',ruleName:'',accountType:'current',effectiveTime:'',expireTime:'',currentSettlement:{type:'order',orderDays:0},fixedSettlement:{type:'order',orderDays:0},storeMode:'single',selectedStores:[],ledgerItems:[],currentLedgerId:null,nodes:{},roots:[]};let idSeq=1;const accountOptions=['账号一','账号二','账号三','账号四','账号五','星力展厅店-店长','宝点数字体验店-店长','宝点数字体验店-店长','星力展厅店-店长','平台-服务费','代理-华东大区'];
+const terminalOptions=['小程序','收银台#000001','收银台#000002','pos机#000001','pos机#000002'];
+const ruleTemplates=[
+  {id:'R001',name:'门店日常营收分成',accountType:'current',effectiveTime:'2025-11-01T00:00',expireTime:''},
+  {id:'R002',name:'节假日活动营收分成',accountType:'fixed',effectiveTime:'2025-11-19T00:00',expireTime:'2025-11-25T23:59'}
+];
+const els={schemeName:document.getElementById('schemeName'),ruleCfgName:document.getElementById('ruleCfgName'),ruleCfgType:document.getElementById('ruleCfgType'),ruleCfgStart:document.getElementById('ruleCfgStart'),ruleCfgEnd:document.getElementById('ruleCfgEnd'),ruleSourceNew:document.getElementById('ruleSourceNew'),ruleSourceExisting:document.getElementById('ruleSourceExisting'),ruleExistingSelectCont:document.getElementById('ruleExistingSelectCont'),ruleExistingSelect:document.getElementById('ruleExistingSelect'),ruleEditorFields:document.getElementById('ruleEditorFields'),ledgerScopeType:document.getElementById('ledgerScopeType'),btnPickStores:document.getElementById('btnPickStores'),selectedStores:document.getElementById('selectedStores'),palette:document.getElementById('palette'),search:document.getElementById('search'),root:document.getElementById('root'),canvas:document.getElementById('canvas'),issues:document.getElementById('issues'),summary:document.getElementById('summary'),btnExport:document.getElementById('btnExport'),btnValidate:document.getElementById('btnValidate'),btnReset:document.getElementById('btnReset'),btnLedgerAdd:document.getElementById('btnLedgerAdd'),btnBatchEditTerminals:document.getElementById('btnBatchEditTerminals'),ledgerTableBody:document.getElementById('ledgerTableBody'),ledgerEmptyHint:document.getElementById('ledgerEmptyHint'),ruleHintBox:document.getElementById('ruleHintBox')};
+els.schemeName.oninput=()=>scheme.name=els.schemeName.value;if(els.ruleCfgName){els.ruleCfgName.oninput=()=>scheme.ruleName=els.ruleCfgName.value;}
+function toggleEndByType(val){const c=document.getElementById('ruleCfgEndCont');if(val==='fixed'){c.classList.remove('hidden');}else{c.classList.add('hidden');}}
+if(els.ruleCfgType){els.ruleCfgType.onchange=()=>{scheme.accountType=els.ruleCfgType.value;toggleEndByType(scheme.accountType);toggleSettlementByProjectType(scheme.accountType);};}
+function setRuleFieldsDisabled(dis){['ruleCfgName','ruleCfgType','ruleCfgStart','ruleCfgEnd'].forEach(k=>{if(els[k]) els[k].disabled=!!dis;});}
+function populateRuleExistingOptions(){if(!els.ruleExistingSelect) return; els.ruleExistingSelect.innerHTML='<option value="">请选择</option>'+ruleTemplates.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');}
+function applyRuleTemplateById(id){const tpl=ruleTemplates.find(x=>x.id===id);if(!tpl) return; if(els.ruleCfgName) els.ruleCfgName.value=tpl.name; if(els.ruleCfgType) els.ruleCfgType.value=tpl.accountType; if(els.ruleCfgStart) els.ruleCfgStart.value=tpl.effectiveTime||''; if(els.ruleCfgEnd) els.ruleCfgEnd.value=tpl.expireTime||''; scheme.ruleName=tpl.name; scheme.accountType=tpl.accountType; scheme.effectiveTime=tpl.effectiveTime||''; scheme.expireTime=tpl.expireTime||''; toggleEndByType(scheme.accountType); toggleSettlementByProjectType(scheme.accountType); setRuleFieldsDisabled(true);} 
+function switchRuleSource(src){if(src==='existing'){ if(els.ruleExistingSelectCont) els.ruleExistingSelectCont.classList.remove('hidden'); setRuleFieldsDisabled(true); } else { if(els.ruleExistingSelectCont) els.ruleExistingSelectCont.classList.add('hidden'); setRuleFieldsDisabled(false); }}
+populateRuleExistingOptions();
+if(els.ruleSourceNew){els.ruleSourceNew.onchange=()=>switchRuleSource('new');}
+if(els.ruleSourceExisting){els.ruleSourceExisting.onchange=()=>switchRuleSource('existing');}
+if(els.ruleExistingSelect){els.ruleExistingSelect.onchange=()=>applyRuleTemplateById(els.ruleExistingSelect.value);} 
+function updateProjectCurrentSettlementOptions(){const sel=document.getElementById('projectCurrentSettlementType'); if(!sel) return; sel.innerHTML=''; [{v:'order',t:'按订单结算'},{v:'month',t:'按月结算'},{v:'year',t:'按年结算'}].forEach(o=>{const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; sel.appendChild(opt);}); const tp=scheme.currentSettlement?.type||'order'; sel.value=tp; renderProjectCurrentSettlementFields(tp, scheme.currentSettlement); sel.onchange=(e)=>{ renderProjectCurrentSettlementFields(e.target.value, scheme.currentSettlement); }}
+function renderProjectCurrentSettlementFields(selectedType, existing){const cont=document.getElementById('projectCurrentSettlementFields'); if(!cont) return; cont.innerHTML=''; let html=''; if(selectedType==='order'){ html = `<div><label class="text-sm text-gray-700">每笔订单结束后（天）</label><input id="project_current_orderDays" type="number" min="0" class="w-full border rounded px-2 py-1" value="${existing?.orderDays ?? ''}"></div>`; } else if(selectedType==='month'){ html=`<div><label class="text-sm text-gray-700">每月结算日（号）</label><input id="project_current_monthDay" type="number" min="1" max="31" class="w-full border rounded px-2 py-1" value="${existing?.monthDay ?? ''}"></div>`; } else if(selectedType==='year'){ html=`<div><label class="text-sm text-gray-700">每年结算（月份）</label><input id="project_current_yearMonth" type="number" min="1" max="12" class="w-full border rounded px-2 py-1" value="${existing?.yearMonth ?? ''}"></div><div><label class="text-sm text-gray-700">每年结算（日期）</label><input id="project_current_yearDay" type="number" min="1" max="31" class="w-full border rounded px-2 py-1" value="${existing?.yearDay ?? ''}"></div>`; } cont.innerHTML=html; const s={type:selectedType}; if(selectedType==='order'){ const el=document.getElementById('project_current_orderDays'); if(el) el.oninput=()=>{ s.orderDays=parseInt(el.value||'0',10)||0; scheme.currentSettlement=s; }; } else if(selectedType==='month'){ const el=document.getElementById('project_current_monthDay'); if(el) el.oninput=()=>{ s.monthDay=parseInt(el.value||'1',10)||1; scheme.currentSettlement=s; }; } else if(selectedType==='year'){ const em=document.getElementById('project_current_yearMonth'); const ed=document.getElementById('project_current_yearDay'); const sync=()=>{ s.yearMonth=parseInt(em?.value||'1',10)||1; s.yearDay=parseInt(ed?.value||'1',10)||1; scheme.currentSettlement=s; }; if(em) em.oninput=sync; if(ed) ed.oninput=sync; sync(); } scheme.currentSettlement=s}
+function updateProjectFixedSettlementOptions(){const sel=document.getElementById('projectFixedSettlementType'); if(!sel) return; sel.innerHTML=''; [{v:'order',t:'按订单结算'},{v:'month',t:'按月结算'},{v:'revenue_end',t:'营收时间结束后统一结算'}].forEach(o=>{const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; sel.appendChild(opt);}); const tp=scheme.fixedSettlement?.type||'order'; sel.value=tp; renderProjectFixedSettlementFields(tp, scheme.fixedSettlement); sel.onchange=(e)=>{ renderProjectFixedSettlementFields(e.target.value, scheme.fixedSettlement); }}
+function renderProjectFixedSettlementFields(selectedType, existing){const cont=document.getElementById('projectFixedSettlementFields'); if(!cont) return; cont.innerHTML=''; let html=''; if(selectedType==='order'){ html = `<div><label class="text-sm text-gray-700">每笔订单结束后（天）</label><input id="project_fixed_orderDays" type="number" min="0" class="w-full border rounded px-2 py-1" value="${existing?.orderDays ?? ''}"></div>`; } else if(selectedType==='month'){ html=`<div><label class="text-sm text-gray-700">每月结算日（号）</label><input id="project_fixed_monthDay" type="number" min="1" max="31" class="w-full border rounded px-2 py-1" value="${existing?.monthDay ?? ''}"></div>`; } else if(selectedType==='revenue_end'){ html=`<div><label class="text-sm text-gray-700">营收结束后（天）结算</label><input id="project_fixed_revenueEndDays" type="number" min="0" class="w-full border rounded px-2 py-1" value="${existing?.revenueEndDays ?? ''}"></div>`; } cont.innerHTML=html; const s={type:selectedType}; if(selectedType==='order'){ const el=document.getElementById('project_fixed_orderDays'); if(el) el.oninput=()=>{ s.orderDays=parseInt(el.value||'0',10)||0; scheme.fixedSettlement=s; }; } else if(selectedType==='month'){ const el=document.getElementById('project_fixed_monthDay'); if(el) el.oninput=()=>{ s.monthDay=parseInt(el.value||'1',10)||1; scheme.fixedSettlement=s; }; } else if(selectedType==='revenue_end'){ const el=document.getElementById('project_fixed_revenueEndDays'); if(el) el.oninput=()=>{ s.revenueEndDays=parseInt(el.value||'0',10)||0; scheme.fixedSettlement=s; }; } scheme.fixedSettlement=s}
+updateProjectCurrentSettlementOptions();
+updateProjectFixedSettlementOptions();
+function toggleSettlementByProjectType(tp){const cw=document.getElementById('projectCurrentSettlementWrap'); const fw=document.getElementById('projectFixedSettlementWrap'); if(!cw||!fw) return; if(tp==='fixed'){ cw.classList.add('hidden'); fw.classList.remove('hidden'); } else { fw.classList.add('hidden'); cw.classList.remove('hidden'); }}
+toggleSettlementByProjectType(els.ruleCfgType?els.ruleCfgType.value:scheme.accountType);
+function renderSelectedStores(){const cont=els.selectedStores;if(!cont) return; const items=(scheme.selectedStores||[]).map(s=>`<span class="inline-flex items-center px-2 py-1 bg-gray-100 text-sm text-gray-700 rounded">${s.name}<button class="ml-2 text-red-600 remove-store" data-id="${s.id}"><i class="fas fa-times"></i></button></span>`).join(''); cont.innerHTML=items||'<span class="text-xs text-gray-400">未指定门店</span>'; if(items){ cont.querySelectorAll('button.remove-store').forEach(b=>{ b.onclick=()=>{ const id=b.dataset.id; scheme.selectedStores=scheme.selectedStores.filter(x=>x.id!==id); renderSelectedStores(); }; }); } const cnt=document.getElementById('selectedStoresCount'); if(cnt) cnt.textContent=((scheme.selectedStores||[]).length||0)+' 个'; }
+if(els.ledgerScopeType){ els.ledgerScopeType.onchange=()=>{ scheme.storeMode = els.ledgerScopeType.value==='multi' ? 'multi' : 'single'; if(scheme.storeMode==='single' && Array.isArray(scheme.selectedStores) && scheme.selectedStores.length>1){ scheme.selectedStores = scheme.selectedStores.slice(0,1); renderSelectedStores(); } }; }
+if(els.btnPickStores){ els.btnPickStores.onclick=()=>openStorePicker(); }
+renderSelectedStores();
+if(els.ruleCfgStart){els.ruleCfgStart.onchange=()=>scheme.effectiveTime=els.ruleCfgStart.value;}
+if(els.ruleCfgEnd){els.ruleCfgEnd.onchange=()=>scheme.expireTime=els.ruleCfgEnd.value;}
+toggleEndByType(els.ruleCfgType?els.ruleCfgType.value:'current');
+els.search.oninput=()=>{const k=els.search.value.trim().toLowerCase();[...els.palette.children].forEach(x=>x.style.display=(k&& !x.textContent.toLowerCase().includes(k))?'none':'');};[...els.palette.children].forEach(item=>{item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain','palette:'+item.textContent.trim());});});let dragId=null;
+const pickContext={parentId:null};
+const terminalPickContext={mode:'single',ledgerId:null,ledgerIds:[]};
+function openAccountPicker(targetParentId){pickContext.parentId=targetParentId||null;const modal=document.getElementById('accountPickerModal');const list=document.getElementById('accountPickerList');const search=document.getElementById('accountPickerSearch');
+  const used=new Set();
+  if(pickContext.parentId){const p=scheme.nodes[pickContext.parentId];if(p){p.children.forEach(cid=>{const n=scheme.nodes[cid];if(n&&n.name) used.add(n.name);});}}
+  else{scheme.roots.forEach(rid=>{const n=scheme.nodes[rid];if(n&&n.name) used.add(n.name);});}
+  list.innerHTML = accountOptions.map(o=>{const dis=used.has(o);return `<label class="flex items-center justify-between px-2 py-1 rounded hover:bg-gray-50"><span class="text-sm">${o}${dis?'<span class=\"ml-2 text-xs text-gray-400\">(已存在)</span>':''}</span><input type="checkbox" class="account-pick" value="${o}" ${dis?'disabled':''}></label>`;}).join('');
+  search.value='';const filter=()=>{const k=search.value.trim().toLowerCase();[...list.children].forEach(el=>{const txt=el.querySelector('span').textContent.toLowerCase();el.style.display=(k && !txt.includes(k))?'none':'';});};search.oninput=filter;filter();modal.classList.remove('hidden');}
+function closeAccountPicker(){document.getElementById('accountPickerModal').classList.add('hidden');}
+function commitAddAccounts(){const list=document.getElementById('accountPickerList');const checks=list.querySelectorAll('input.account-pick:checked');const names=[...checks].map(c=>c.value);if(!names.length){closeAccountPicker();return;}names.forEach(n=>addNode(n,pickContext.parentId));render();validate();closeAccountPicker();}
+(function(){const btnConfirm=document.getElementById('accountPickerConfirm');const btnCancel=document.getElementById('accountPickerCancel');const btnClose=document.getElementById('accountPickerClose');const btnAll=document.getElementById('accountPickerSelectAll');const btnClear=document.getElementById('accountPickerClear');if(btnConfirm){btnConfirm.onclick=commitAddAccounts;}if(btnCancel){btnCancel.onclick=closeAccountPicker;}if(btnClose){btnClose.onclick=closeAccountPicker;}if(btnAll){btnAll.onclick=()=>{const list=document.getElementById('accountPickerList');list.querySelectorAll('input.account-pick:not(:disabled)').forEach(c=>c.checked=true);};}if(btnClear){btnClear.onclick=()=>{const list=document.getElementById('accountPickerList');list.querySelectorAll('input.account-pick').forEach(c=>c.checked=false);};}})();
+function openTerminalPicker(ledgerId){
+  terminalPickContext.mode='single';
+  terminalPickContext.ledgerId = ledgerId;
+  terminalPickContext.ledgerIds = [];
+  const modal = document.getElementById('terminalPickerModal');
+  const list = document.getElementById('terminalPickerList');
+  const cur = scheme.ledgerItems.find(l=>l.id===ledgerId);
+  const selected = new Set(cur?.terminals || []);
+  list.innerHTML = terminalOptions.map(t=>
+    `<label class=\"inline-flex items-center px-2 py-1 border rounded\">`
+       + `<input type=\"checkbox\" class=\"terminal-pick mr-2\" value=\"${t}\" ${selected.has(t)?'checked':''}>`
+       + `<span class=\"text-sm\">${t}</span>`
+     + `</label>`
+  ).join('');
+  modal.classList.remove('hidden');
+}
+function closeTerminalPicker(){
+  document.getElementById('terminalPickerModal')?.classList.add('hidden');
+}
+function commitTerminals(){
+  const checks = document.querySelectorAll('#terminalPickerList input.terminal-pick:checked');
+  const picked = [...checks].map(c=>c.value);
+  if(terminalPickContext.mode==='batch'){
+    (terminalPickContext.ledgerIds||[]).forEach(id=>{
+      const l=scheme.ledgerItems.find(x=>x.id===id);
+      if(l) l.terminals = picked.slice();
+    });
+  }else{
+    const ledgerId = terminalPickContext.ledgerId;
+    const cur = scheme.ledgerItems.find(l=>l.id===ledgerId);
+    if(cur){ cur.terminals = picked; }
+  }
+  renderLedgerTable();
+  closeTerminalPicker();
+}
+(function(){
+  const btnC=document.getElementById('terminalPickerConfirm');
+  const btnX=document.getElementById('terminalPickerCancel');
+  const btnClose=document.getElementById('terminalPickerClose');
+  const btnAll=document.getElementById('terminalPickerSelectAll');
+  const btnClear=document.getElementById('terminalPickerClear');
+  if(btnC) btnC.onclick=commitTerminals;
+  if(btnX) btnX.onclick=closeTerminalPicker;
+  if(btnClose) btnClose.onclick=closeTerminalPicker;
+  if(btnAll) btnAll.onclick=()=>{
+    document.querySelectorAll('#terminalPickerList input.terminal-pick').forEach(c=>c.checked=true);
+  };
+  if(btnClear) btnClear.onclick=()=>{
+    document.querySelectorAll('#terminalPickerList input.terminal-pick').forEach(c=>c.checked=false);
+  };
+})();
+const storePickContext={};
+function openStorePicker(){
+  const modal=document.getElementById('storePickerModal');
+  const list=document.getElementById('storePickerList');
+  const selAll=document.getElementById('storePickerSelectAll');
+  const clr=document.getElementById('storePickerClear');
+  const mode=scheme.storeMode==='multi'?'multi':'single';
+  const selected=new Set((scheme.selectedStores||[]).map(s=>s.id));
+  const items=(ledgerData.store||[]).map(s=>{
+    const checked=selected.has(s.id)? (mode==='single'?'checked':'checked') : '';
+    const dn=(s.storeName||'').replace(/-店长$/,'');
+    if(mode==='single'){
+      return `<label class="flex items-center justify-between px-2 py-1 rounded hover:bg-gray-50"><span class="text-sm">${dn}</span><input type="radio" name="store-pick" class="store-pick" value="${s.id}" ${checked}></label>`;
+    }
+    return `<label class="flex items-center justify-between px-2 py-1 rounded hover:bg-gray-50"><span class="text-sm">${dn}</span><input type="checkbox" class="store-pick" value="${s.id}" ${checked}></label>`;
+  }).join('');
+  list.innerHTML=items;
+  if(selAll) selAll.style.display = (mode==='single') ? 'none' : '';
+  modal.classList.remove('hidden');
+}
+function closeStorePicker(){document.getElementById('storePickerModal')?.classList.add('hidden');}
+function commitStorePick(){
+  const mode=scheme.storeMode==='multi'?'multi':'single';
+  let pickedIds=[];
+  if(mode==='single'){
+    const r=document.querySelector('#storePickerList input.store-pick[type="radio"]:checked');
+    if(r) pickedIds=[r.value];
+  }else{
+    const checks=document.querySelectorAll('#storePickerList input.store-pick[type="checkbox"]:checked');
+    pickedIds=[...checks].map(c=>c.value);
+  }
+  const map=new Map((ledgerData.store||[]).map(s=>{const dn=(s.storeName||'').replace(/-店长$/,''); return [s.id,{id:s.id,name:dn}];}));
+  scheme.selectedStores = pickedIds.map(id=>map.get(id)).filter(Boolean);
+  renderSelectedStores();
+  closeStorePicker();
+}
+(function(){
+  const btnC=document.getElementById('storePickerConfirm');
+  const btnX=document.getElementById('storePickerCancel');
+  const btnClose=document.getElementById('storePickerClose');
+  const btnAll=document.getElementById('storePickerSelectAll');
+  const btnClear=document.getElementById('storePickerClear');
+  if(btnC) btnC.onclick=commitStorePick;
+  if(btnX) btnX.onclick=closeStorePicker;
+  if(btnClose) btnClose.onclick=closeStorePicker;
+  if(btnAll) btnAll.onclick=()=>{
+    document.querySelectorAll('#storePickerList input.store-pick[type="checkbox"]').forEach(c=>c.checked=true);
+  };
+  if(btnClear) btnClear.onclick=()=>{
+    document.querySelectorAll('#storePickerList input.store-pick').forEach(c=>c.checked=false);
+  };
+})();
+if(els.btnLedgerAdd){els.btnLedgerAdd.onclick=()=>openLedgerPicker();}
+if(els.btnBatchEditTerminals){
+  els.btnBatchEditTerminals.onclick=()=>{
+    const checks=document.querySelectorAll('#ledgerTableBody input.ledger-select:checked');
+    const ids=[...checks].map(c=>c.dataset.id);
+    if(!ids.length){ alert('请先在表格中勾选要批量编辑的分账项目'); return; }
+    terminalPickContext.mode='batch';
+    terminalPickContext.ledgerId=null;
+    terminalPickContext.ledgerIds=ids;
+    const modal=document.getElementById('terminalPickerModal');
+    const list=document.getElementById('terminalPickerList');
+    const common=ids.reduce((acc,id)=>{
+      const l=scheme.ledgerItems.find(x=>x.id===id);
+      const s=new Set(l?.terminals||[]);
+      if(acc==null) return s;
+      return new Set([...acc].filter(x=>s.has(x)));
+    }, null) || new Set();
+    list.innerHTML = terminalOptions.map(t=>
+      `<label class=\"inline-flex items-center px-2 py-1 border rounded\">`
+         + `<input type=\"checkbox\" class=\"terminal-pick mr-2\" value=\"${t}\" ${common.has(t)?'checked':''}>`
+         + `<span class=\"text-sm\">${t}</span>`
+       + `</label>`
+    ).join('');
+    modal.classList.remove('hidden');
+  };
+}
+(function(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    if(params.get('from')==='pm'){
+      const container = document.getElementById('normalModeButtons');
+      if(container){
+        const backBtn = document.createElement('button');
+        backBtn.id = 'btnBackToPM';
+        backBtn.className = 'px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded';
+        backBtn.innerHTML = '<i class="fas fa-arrow-left mr-1"></i>返回';
+        backBtn.onclick = function(){
+          if(document.referrer && document.referrer.includes('project-create.html')){
+            history.back();
+          }else{
+            window.location.href = 'project-create.html';
+          }
+        };
+        container.appendChild(backBtn);
+      }
+    }
+  }catch(e){ }
+})();
+const ledgerTypeLabels={product:'商品',combo:'套餐',machine:'机台',store:'门店营收'};
+const ledgerData={
+  store:[
+    {id:'S301',storeName:'星力展厅店-店长',city:'广州'},
+    {id:'S302',storeName:'宝点数字体验店-店长',city:'深圳'},
+    {id:'S303',storeName:'星力展厅店-店长',city:'上海'},
+    {id:'S304',storeName:'宝点数字体验店-店长',city:'北京'}
+  ],
+  product:[
+    {id:'P001',name:'可乐',group:'日常营销',tag:'畅销',source:'集团',price:3.5,stock:120},
+    {id:'P002',name:'春节大礼包',group:'节日礼品',tag:'新品',source:'门店',price:6.8,stock:80},
+    {id:'P003',name:'哪吒',group:'专题礼品',tag:'促销',source:'门店',price:12,stock:50},
+    {id:'P004',name:'labubu',group:'专题礼品',tag:'畅销',source:'门店',price:2.5,stock:300}
+  ],
+  combo:[
+    {id:'C101',name:'星力展厅店10次票',type:'计次票',source:'门店',group:'计次票套餐',price:25}
+  ]
+};
+const filterState={product:{},combo:{},machine:{},store:{}};
+const pagerState={product:1,combo:1,machine:1,store:1};
+let currentLedgerPickType='store';
+function renderLedgerTypeFilters(){
+  const cont=document.getElementById('ledgerTypeFilters');
+  if(!cont) return;
+  const schema=currentLedgerPickType==='product'
+    ? {filters:[{key:'group',label:'分组',type:'select',options:['日常营销','节日礼品','专题礼品']},{key:'source',label:'来源',type:'select',options:['集团','门店']}],columns:[{key:'name',label:'名称'},{key:'group',label:'分组'},{key:'source',label:'来源'},{key:'price',label:'价格'},{key:'stock',label:'库存'}],labelKey:'name'}
+    : currentLedgerPickType==='combo'
+      ? {filters:[{key:'type',label:'类型',type:'select',options:['计次票','月卡','季卡','年卡']},{key:'group',label:'分组',type:'select',options:['计次票套餐','活动套餐']}],columns:[{key:'name',label:'名称'},{key:'type',label:'类型'},{key:'source',label:'来源'},{key:'price',label:'价格'}],labelKey:'name'}
+      : currentLedgerPickType==='machine'
+        ? {filters:[{key:'group',label:'类型',type:'select',options:['跳舞机','太鼓达人','抓娃娃机']},{key:'brand',label:'品牌',type:'select',options:['世嘉','BANDAI','CAPCOM','独立']},{key:'source',label:'来源',type:'select',options:['集团','门店']}],columns:[{key:'name',label:'名称'},{key:'brand',label:'品牌'},{key:'group',label:'类型'},{key:'source',label:'来源'}],labelKey:'name'}
+        : {filters:[],columns:[{key:'storeName',label:'门店'},{key:'city',label:'城市'}],labelKey:'storeName'};
+  const used=new Set((scheme.ledgerItems||[]).map(l=>l.name));
+  const flt=filterState[currentLedgerPickType]||{};
+  cont.innerHTML = schema.filters.map(f=>{
+    const opts=(f.options||[]).map(o=>`<option value="${o}" ${flt[f.key]===o?'selected':''}>${o}</option>`).join('');
+    return `<div class="inline-flex items-center border rounded-lg overflow-hidden"><span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">${f.label}</span><select data-key="${f.key}" class="px-3 py-2 text-sm focus:outline-none">${opts}</select></div>`;
+  }).join(' ');
+  cont.querySelectorAll('select[data-key]').forEach(sel=>{
+    sel.onchange=()=>{filterState[currentLedgerPickType][sel.dataset.key]=sel.value;renderLedgerTypeTable();};
+  });
+}
+function renderLedgerTypeTable(){
+  const tbody=document.getElementById('ledgerTypeTableBody');
+  const thead=document.getElementById('ledgerTypeTableHead');
+  const schema=currentLedgerPickType==='product'
+    ? {columns:[{key:'name',label:'名称'},{key:'group',label:'分组'},{key:'source',label:'来源'},{key:'price',label:'价格'},{key:'stock',label:'库存'}], rows:ledgerData.product, labelKey:'name'}
+    : currentLedgerPickType==='combo'
+      ? {columns:[{key:'name',label:'名称'},{key:'type',label:'类型'},{key:'source',label:'来源'},{key:'price',label:'价格'}], rows:ledgerData.combo, labelKey:'name'}
+      : currentLedgerPickType==='machine'
+        ? {columns:[{key:'name',label:'名称'},{key:'brand',label:'品牌'},{key:'group',label:'类型'},{key:'source',label:'来源'}], rows:[], labelKey:'name'}
+        : {columns:[{key:'storeName',label:'门店'},{key:'city',label:'城市'}], rows:ledgerData.store, labelKey:'storeName'};
+  const used=new Set((scheme.ledgerItems||[]).map(l=>l.name));
+  if(!tbody||!thead) return; const PAGE_SIZE=10; const page=pagerState[currentLedgerPickType]||1; const flt=filterState[currentLedgerPickType]||{}; let rows=schema.rows.slice(); Object.keys(flt).forEach(k=>{if(flt[k]) rows=rows.filter(r=>String(r[k]||'').includes(flt[k]));}); const total=rows.length; const totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE)); const start=(page-1)*PAGE_SIZE; const pageRows=rows.slice(start,start+PAGE_SIZE);
+  thead.innerHTML='<tr>' + schema.columns.map(c=>`<th class="px-3 py-2 text-left">${c.label}</th>`).join('') + '<th class="px-3 py-2 text-center">选择</th></tr>';
+  tbody.innerHTML=pageRows.map(x=>{const labelKey=schema.labelKey; const disp=(x[labelKey]||x.name||''); const label=ledgerTypeLabels[currentLedgerPickType]+ ' - ' + disp; const dis=used.has(label); const cols=schema.columns.map(c=>`<td class="px-3 py-2">${x[c.key]!==undefined?x[c.key]:''}</td>`).join(''); return `<tr class="border-t">${cols}<td class="px-3 py-2 text-center"><input type="checkbox" class="ledger-type-pick" value="${label}" ${dis?'disabled':''}></td></tr>`;}).join('');
+  const pager=document.getElementById('ledgerTypePager');
+  if(pager){
+    const pageBtns=Array.from({length:totalPages},(_,i)=>{const idx=i+1; const active=idx===page? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'; return `<button class="px-2 py-1 rounded ${active}" data-page="${idx}">${idx}</button>`;}).join(' ');
+    pager.innerHTML=`<div>共${total}条，每页${PAGE_SIZE}条</div><div class="space-x-2"><button id="pagerPrev" class="px-2 py-1 rounded bg-gray-100" ${page<=1?'disabled':''}>上一页</button>${pageBtns}<button id="pagerNext" class="px-2 py-1 rounded bg-gray-100" ${page>=totalPages?'disabled':''}>下一页</button></div>`;
+    const prev=document.getElementById('pagerPrev');
+    const next=document.getElementById('pagerNext');
+    if(prev) prev.onclick=()=>{pagerState[currentLedgerPickType]=Math.max(1,page-1); renderLedgerTypeTable();};
+    if(next) next.onclick=()=>{pagerState[currentLedgerPickType]=Math.min(totalPages,page+1); renderLedgerTypeTable();};
+    pager.querySelectorAll('button[data-page]').forEach(b=>{b.onclick=()=>{pagerState[currentLedgerPickType]=parseInt(b.getAttribute('data-page'),10)||1; renderLedgerTypeTable();};});
+  }
+}
+function setLedgerPickerViewByType(){
+  const filters=document.getElementById('ledgerTypeFilters');
+  const table=document.querySelector('#ledgerPickerModal table');
+  const pager=document.getElementById('ledgerTypePager');
+  const btnAll=document.getElementById('ledgerPickerSelectAll');
+  const btnClear=document.getElementById('ledgerPickerClear');
+  if(currentLedgerPickType==='store'){
+    const stores=(scheme.selectedStores||[]);
+    const chips=stores.map(s=>`<span class="inline-flex items-center px-2 py-1 bg-gray-100 text-xs text-gray-700 rounded">${(s.name||'')}-门店营收</span>`).join(' ');
+    const hint=stores.length?`已选门店：${stores.length} 个`:'未指定门店，请先在“账目设置”中选择门店';
+    if(filters) filters.innerHTML = `<div class="text-sm text-gray-700 mb-2">${hint}</div><div class="flex flex-wrap gap-2">${chips||''}</div>`;
+    if(table) table.style.display='none';
+    if(pager) pager.style.display='none';
+    if(btnAll) btnAll.style.display='none';
+    if(btnClear) btnClear.style.display='none';
+  }else{
+    if(table) table.style.display='';
+    if(pager) pager.style.display='';
+    if(btnAll) btnAll.style.display='';
+    if(btnClear) btnClear.style.display='';
+  }
+}
+function openLedgerPicker(){
+  const modal=document.getElementById('ledgerPickerModal');
+  document.querySelectorAll('.ledger-type-radio').forEach(r=>{
+    r.checked = r.value===currentLedgerPickType;
+    r.onchange=()=>{
+      currentLedgerPickType=r.value;
+      filterState[currentLedgerPickType]={};
+      pagerState[currentLedgerPickType]=1;
+      renderLedgerTypeFilters();
+      renderLedgerTypeTable();
+      setLedgerPickerViewByType();
+    };
+  });
+  renderLedgerTypeFilters();
+  pagerState[currentLedgerPickType]=1;
+  renderLedgerTypeTable();
+  setLedgerPickerViewByType();
+  modal.classList.remove('hidden');
+}
+function closeLedgerPicker(){document.getElementById('ledgerPickerModal').classList.add('hidden');}
+function commitAddLedgers(){
+  const tbody=document.getElementById('ledgerTypeTableBody');
+  if(!tbody){closeLedgerPicker();return;}
+  let names=[];
+  if(currentLedgerPickType==='store'){
+    const stores=(scheme.selectedStores||[]);
+    if(!stores.length){ alert('请先在“账目设置”中指定门店'); return; }
+    names = stores.map(s=>`${s.name}-门店营收`);
+  }else{
+    const checks=tbody.querySelectorAll('input.ledger-type-pick:checked');
+    names=[...checks].map(c=>c.value);
+  }
+  if(!names.length){closeLedgerPicker();return;}
+  names.forEach(n=>addLedger(n));
+  renderLedgerTable();
+  validate();
+  closeLedgerPicker();
+}
+(function(){
+  const btnC=document.getElementById('ledgerPickerConfirm');
+  const btnX=document.getElementById('ledgerPickerCancel');
+  const btnClose=document.getElementById('ledgerPickerClose');
+  const btnAll=document.getElementById('ledgerPickerSelectAll');
+  const btnClear=document.getElementById('ledgerPickerClear');
+  if(btnC) btnC.onclick=commitAddLedgers;
+  if(btnX) btnX.onclick=closeLedgerPicker;
+  if(btnClose) btnClose.onclick=closeLedgerPicker;
+  if(btnAll) btnAll.onclick=()=>{
+    const tbody=document.getElementById('ledgerTypeTableBody');
+    tbody && tbody.querySelectorAll('input.ledger-type-pick:not(:disabled)').forEach(c=>c.checked=true);
+  };
+  if(btnClear) btnClear.onclick=()=>{
+    const tbody=document.getElementById('ledgerTypeTableBody');
+    tbody && tbody.querySelectorAll('input.ledger-type-pick').forEach(c=>c.checked=false);
+  };
+})();
+function getCurrentTotal(){const cur=scheme.ledgerItems.find(l=>l.id===scheme.currentLedgerId);return cur?cur.total:0;}
+function getCurrentDeposit(){const cur=scheme.ledgerItems.find(l=>l.id===scheme.currentLedgerId);return cur?(cur.deposit||0):0;}
+function renderLedgerTable(){
+  const tbody=document.getElementById('ledgerTableBody');
+  const empty=document.getElementById('ledgerEmptyHint');
+  if(!tbody||!empty) return;
+  if(!scheme.ledgerItems.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
+  empty.classList.add('hidden');
+  const today=new Date();
+  const defY=today.getFullYear();
+  const defM=today.getMonth()+1;
+  const defD=today.getDate();
+  scheme.ledgerItems.forEach(l=>{
+    if(!l.ledgerType){ l.ledgerType='regular'; }
+    if(!Array.isArray(l.terminals)){ l.terminals=[]; }
+    if(!l.revenueStart) l.revenueStart={y:defY,m:defM,d:defD};
+    if(!l.revenueEnd) l.revenueEnd={y:defY,m:defM,d:defD};
+  });
+  const yearOpts=(from,to)=>Array.from({length:(to-from+1)},(_,i)=>from+i);
+  const monthOpts=Array.from({length:12},(_,i)=>i+1);
+  const dayOpts=Array.from({length:31},(_,i)=>i+1);
+  const optionsHTML=(arr,cur)=>arr.map(v=>`<option value="${v}" ${v===cur?'selected':''}>${v}</option>`).join('');
+  tbody.innerHTML=scheme.ledgerItems.map(l=>`
+    <tr data-id="${l.id}" class="border-t">
+      <td class="px-3 py-2 text-center"><input type="checkbox" class="ledger-select" data-id="${l.id}"></td>
+      <td class="px-3 py-2">${l.name}${scheme.currentLedgerId===l.id?'<span class="ml-2 text-xs text-blue-600">[当前]</span>':''}</td>
+      <td class="px-3 py-2">
+        ${Array.isArray(l.terminals)&&l.terminals.length
+          ? (()=>{const full=l.terminals.join('、');return `<span class=\"truncate inline-block align-middle max-w-xs\" title=\"${full}\">${full}</span>`;})()
+          : '<span class="text-xs text-gray-400">未选择</span>'}
+      </td>
+      <td class="px-3 py-2 text-center space-x-2">
+        <button class="text-blue-600 edit-term">编辑终端</button>
+        <button class="text-red-600 delete-ledger">删除</button>
+      </td>
+    </tr>
+  `).join('');
+  const selectAllEl=document.getElementById('ledgerSelectAll');
+  const syncSelectAllState=()=>{
+    const checks=tbody.querySelectorAll('input.ledger-select');
+    const allChecked=(checks.length>0)&&[...checks].every(c=>c.checked);
+    if(selectAllEl) selectAllEl.checked=allChecked;
+  };
+  if(selectAllEl){
+    selectAllEl.onchange=()=>{
+      const checked=selectAllEl.checked;
+      tbody.querySelectorAll('input.ledger-select').forEach(c=>{c.checked=checked;});
+    };
+  }
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    const id=tr.dataset.id;
+    const l=scheme.ledgerItems.find(x=>x.id===id);
+    if(!l) return;
+    const rowChk=tr.querySelector('.ledger-select');
+    if(rowChk){
+      rowChk.onchange=()=>{syncSelectAllState();};
+    }
+    const typeSel=tr.querySelector('.ledger-type');
+    const timeCell=tr.querySelector('.rev-time-cell');
+    const timeContent=tr.querySelector('.rev-time-content');
+    if(typeSel){
+      typeSel.onchange=()=>{
+        const v=typeSel.value==='current'?'current':'regular';
+        l.ledgerType=v;
+        if(timeContent){
+          timeContent.style.display = (v==='current') ? 'none' : '';
+        }
+      };
+    }
+    const bindSel=(cls,keyPath)=>{
+      const el=tr.querySelector(cls);
+      if(!el) return;
+      el.onchange=()=>{
+        const v=parseInt(el.value,10)||0;
+        const [target, key]=keyPath;
+        l[target][key]=v;
+      };
+    };
+    bindSel('.rev-start-y',['revenueStart','y']);
+    bindSel('.rev-start-m',['revenueStart','m']);
+    bindSel('.rev-start-d',['revenueStart','d']);
+    bindSel('.rev-end-y',['revenueEnd','y']);
+    bindSel('.rev-end-m',['revenueEnd','m']);
+    bindSel('.rev-end-d',['revenueEnd','d']);
+    const btnDel=tr.querySelector('.delete-ledger');
+    if(btnDel){
+      btnDel.onclick=()=>{
+        scheme.ledgerItems=scheme.ledgerItems.filter(x=>x.id!==id);
+        if(scheme.currentLedgerId===id){scheme.currentLedgerId=scheme.ledgerItems[0]?.id||null;}
+        renderLedgerTable();
+        validate();
+      };
+    }
+    const btnTerm=tr.querySelector('.edit-term');
+    if(btnTerm){
+      btnTerm.onclick=()=>openTerminalPicker(id);
+    }
+  });
+  syncSelectAllState();
+}
+function addNode(name, parentId){
+  const id = 'N' + (idSeq++);
+  const node = { id, name: name || '', parentId: parentId || null, children: [], allocs: [{ type: 'percent', value: 0, priority: 1 }], deposit: 0, collapsed: false };
+  scheme.nodes[id] = node;
+  if(parentId){ const p = scheme.nodes[parentId]; if(p){ if(!Array.isArray(p.children)) p.children = []; if(!p.children.includes(id)) p.children.push(id); } }
+  else{ if(!scheme.roots.includes(id)) scheme.roots.push(id); }
+  return id;
+}
+function reparent(id, newParentId){
+  const node = scheme.nodes[id];
+  if(!node) return;
+  const oldParentId = node.parentId;
+  if(oldParentId){ const op = scheme.nodes[oldParentId]; if(op && Array.isArray(op.children)){ op.children = op.children.filter(cid => cid !== id); } }
+  else{ scheme.roots = scheme.roots.filter(rid => rid !== id); }
+  node.parentId = newParentId || null;
+  if(newParentId){ const np = scheme.nodes[newParentId]; if(np){ if(!Array.isArray(np.children)) np.children = []; if(!np.children.includes(id)) np.children.push(id); } }
+  else{ if(!scheme.roots.includes(id)) scheme.roots.push(id); }
+}
+function removeNode(id){
+  const node = scheme.nodes[id];
+  if(!node) return;
+  (node.children || []).slice().forEach(cid => removeNode(cid));
+  if(node.parentId){ const p = scheme.nodes[node.parentId]; if(p && Array.isArray(p.children)){ p.children = p.children.filter(cid => cid !== id); } }
+  else{ scheme.roots = scheme.roots.filter(rid => rid !== id); }
+  delete scheme.nodes[id];
+  if(typeof render === 'function') render();
+  if(typeof validate === 'function') validate();
+}
+function nodeCard(node){
+  const li=document.createElement('li');
+  const card=document.createElement('div');
+  card.className='node drop';
+  card.draggable=true;
+  card.dataset.id = node.id;
+  card.addEventListener('dragstart',e=>{dragId=node.id;e.dataTransfer.setData('text/plain','node:'+node.id);});
+  card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('dragover');});
+  card.addEventListener('dragleave',()=>card.classList.remove('dragover'));
+  card.addEventListener('drop',e=>{e.preventDefault();card.classList.remove('dragover');const dt=e.dataTransfer.getData('text/plain');if(dt.startsWith('palette:')){addNode(dt.slice(8),node.id);render();validate();}else if(dt.startsWith('node:')){const src=dt.slice(5);reparent(src,node.id);}});
+  const name=document.createElement('select');
+  name.className='border rounded px-2 py-1 w-full mb-2';
+  name.innerHTML='<option value="">选择账号...</option>' + accountOptions.map(o=>`<option value="${o}">${o}</option>`).join('');
+  name.value=node.name;name.onchange=()=>{node.name=name.value;};
+  const allocWrap=document.createElement('div');
+  allocWrap.className='space-y-2';
+  function renderAllocRows(){
+  allocWrap.innerHTML='';
+  if(!Array.isArray(node.allocs) || node.allocs.length===0){ node.allocs=[{type:'percent',value:0,priority:1}]; }
+  node.allocs.forEach((a,idx)=>{
+    const row=document.createElement('div'); row.className='grid grid-cols-12 gap-2';
+    const col1=document.createElement('div'); col1.className='col-span-3';
+    const lab1=document.createElement('div'); lab1.className='text-xs text-gray-700 mb-1'; lab1.textContent='分配规则';
+    const type=document.createElement('select'); type.className='w-full border rounded px-2 py-1';
+    type.innerHTML='<option value="percent">百分比</option><option value="amount">定额</option>';
+    type.value=a.type;
+    const col2=document.createElement('div'); col2.className='col-span-4';
+    const lab2=document.createElement('div'); lab2.className='text-xs text-gray-700 mb-1'; lab2.textContent='额度';
+    const val=document.createElement('input'); val.type='number'; val.step='0.01'; val.min='0'; val.className='w-full border rounded px-2 py-1';
+    val.placeholder=a.type==='percent'?'比例%':'金额¥'; val.value=a.value;
+    type.onchange=()=>{ a.type=type.value; val.placeholder=a.type==='percent'?'比例%':'金额¥'; validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+    col1.appendChild(lab1); col1.appendChild(type);
+    val.oninput=()=>{ a.value=parseFloat(val.value||0); validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+    col2.appendChild(lab2); col2.appendChild(val);
+    const col3=document.createElement('div'); col3.className='col-span-3';
+    const lab3=document.createElement('div'); lab3.className='text-xs text-gray-700 mb-1'; lab3.textContent='优先级';
+    const pri=document.createElement('input'); pri.type='number'; pri.step='1'; pri.min='1'; pri.className='w-full border rounded px-2 py-1';
+    pri.value=a.priority; pri.oninput=()=>{ a.priority=parseInt(pri.value||1); validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+    col3.appendChild(lab3); col3.appendChild(pri);
+    const col4=document.createElement('div'); col4.className='col-span-2 ops flex items-center justify-end space-x-1';
+    const bRemove=document.createElement('button'); bRemove.className='text-red-600'; bRemove.innerHTML='<i class="fas fa-trash"></i>'; bRemove.title='删除该额度';
+    bRemove.onclick=()=>{ if(node.allocs.length>1){ node.allocs.splice(idx,1); renderAllocRows(); validate(); } };
+    col4.appendChild(bRemove);
+    row.appendChild(col1); row.appendChild(col2); row.appendChild(col3); row.appendChild(col4);
+    allocWrap.appendChild(row);
+  });
+}
+  renderAllocRows();
+  const addAlloc=document.createElement('button');
+  addAlloc.className='text-blue-600 mt-2';
+  addAlloc.innerHTML='<i class="fas fa-plus"></i> 添加额度';
+  addAlloc.title='为该账号增加一条额度设置';
+  addAlloc.onclick=()=>{ const nextPri=(node.allocs&&node.allocs.length)?Math.max(...node.allocs.map(x=>x.priority))+1:1; node.allocs.push({type:'percent',value:0,priority:nextPri}); renderAllocRows(); validate(); };
+  const ops=document.createElement('div');
+  ops.className='flex items-center justify-end space-x-2 mt-2';
+  const bSibling=document.createElement('button'); bSibling.className='inline-flex items-center text-blue-600'; bSibling.innerHTML='<i class="fas fa-sitemap mr-1"></i>添加同级'; bSibling.title='添加同级'; bSibling.onclick=()=>openAccountPicker(node.parentId);
+  const bAdd=document.createElement('button'); bAdd.className='inline-flex items-center text-blue-600'; bAdd.innerHTML='<i class="fas fa-plus mr-1"></i>添加子级'; bAdd.title='添加子级'; bAdd.onclick=()=>openAccountPicker(node.id);
+  const bDel=document.createElement('button'); bDel.className='inline-flex items-center text-red-600'; bDel.innerHTML='<i class="fas fa-trash mr-1"></i>删除'; bDel.title='删除'; bDel.onclick=()=>removeNode(node.id);
+  const bCol=document.createElement('button'); bCol.className='text-gray-600'; bCol.innerHTML=node.collapsed?'<i class="fas fa-chevron-right"></i>':'<i class="fas fa-chevron-down"></i>'; bCol.title='折叠/展开'; bCol.onclick=()=>{ node.collapsed=!node.collapsed; render(); };
+  ops.appendChild(bSibling); ops.appendChild(bAdd); ops.appendChild(bDel); ops.appendChild(bCol);
+  card.appendChild(name);
+  const depRow=document.createElement('div'); depRow.className='flex items-center justify-between mb-2';
+  const depLabel=document.createElement('span'); depLabel.className='text-gray-600 text-sm'; depLabel.textContent='保证金';
+  const depInput=document.createElement('input'); depInput.type='number'; depInput.step='0.01'; depInput.min='0'; depInput.className='border rounded px-2 py-1 w-32 text-right';
+  depInput.value=node.deposit||0;
+  depInput.oninput=()=>{ node.deposit=parseFloat(depInput.value||0); validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+  depRow.appendChild(depLabel); depRow.appendChild(depInput);
+  card.appendChild(depRow);
+  card.appendChild(allocWrap);
+  card.appendChild(addAlloc);
+  card.appendChild(ops);
+  li.appendChild(card);
+  if(!node.collapsed&&node.children.length){ const ul=document.createElement('ul'); node.children.forEach(cid=>{ ul.appendChild(nodeCard(scheme.nodes[cid])); }); li.appendChild(ul); }
+  return li;
+}
+function render(){els.root.innerHTML='';scheme.roots.forEach(id=>els.root.appendChild(nodeCard(scheme.nodes[id])));}function validate(){
+  const issues=[]; const ps={}; const am={};
+  Object.values(scheme.nodes).forEach(n=>{
+    const p=n.parentId||'ROOT';
+    const allocs=n.allocs||[];
+    allocs.forEach(a=>{ if(a.type==='percent'){ ps[p]=(ps[p]||0)+(a.value||0); } else if(a.type==='amount'){ am[p]=(am[p]||0)+(a.value||0); } });
+  });
+  Object.values(scheme.nodes).forEach(n=>{ const card=document.querySelector('.node[data-id="'+n.id+'"]'); if(card){ card.classList.remove('invalid'); } });
+  const curTotal=getCurrentTotal();
+  Object.keys(ps).forEach(pid=>{ if(ps[pid]>100){ const nm=pid==='ROOT'?'根级':scheme.nodes[pid]?.name||pid; issues.push(nm+' 子项百分比合计超过100% ('+ps[pid].toFixed(2)+'%)'); } });
+  Object.keys(am).forEach(pid=>{ if(curTotal && am[pid]>curTotal){ const nm=pid==='ROOT'?'根级':scheme.nodes[pid]?.name||pid; issues.push(nm+' 子项定额合计超过账目总额 (¥ '+am[pid].toFixed(2)+' > ¥ '+curTotal+')'); } });
+  Object.keys(ps).forEach(pid=>{ const overP = ps[pid] > 100; const overA = curTotal && am[pid] > curTotal; if(overP || overA){ const children = pid==='ROOT' ? scheme.roots : (scheme.nodes[pid]?.children || []); children.forEach(cid=>{ const card = document.querySelector('.node[data-id="'+cid+'"]'); if(card){ card.classList.add('invalid'); } }); } });
+if(issues.length){ els.issues.innerHTML=issues.map(i=>'<li>'+i+'</li>').join(''); }else{ els.issues.innerHTML='<li class="text-green-600"><i class="fas fa-check-circle mr-1"></i>通过校验</li>'; }
+const ib=els.issues?els.issues.parentElement:null;
+if(ib){ ib.classList.remove('bg-yellow-50','border-yellow-200','bg-green-50','border-green-200'); if(issues.length){ ib.classList.add('bg-yellow-50','border-yellow-200'); } else { ib.classList.add('bg-green-50','border-green-200'); } }
+  const lines=[];
+  Object.keys(ps).forEach(pid=>{ const nm=pid==='ROOT'?'根级':scheme.nodes[pid]?.name||pid; const pV = (ps[pid]||0); const aV = (am[pid]||0); lines.push('<div><span class="font-medium">'+nm+'</span>：保 <span class="text-gray-700">¥ '+(pid==='ROOT'?getCurrentDeposit():((scheme.nodes[pid]?.deposit)||0)).toFixed(2)+'</span> ，比例合计 <span class="'+(pV>100?'text-red-600':'text-green-600')+'">'+pV.toFixed(2)+'%</span> ，定额合计 <span class="'+(curTotal&&aV>curTotal?'text-red-600':'text-green-600')+'">¥ '+aV.toFixed(2)+'</span></div>'); });
+  els.summary.innerHTML=lines.join('');
+}els.canvas.addEventListener('dragover',e=>{e.preventDefault();els.canvas.classList.add('dragover');});els.canvas.addEventListener('dragleave',()=>els.canvas.classList.remove('dragover'));els.canvas.addEventListener('drop',e=>{e.preventDefault();els.canvas.classList.remove('dragover');const dt=e.dataTransfer.getData('text/plain');if(dt.startsWith('palette:')){addNode(dt.slice(8),null);render();validate();}else if(dt.startsWith('node:')){reparent(dt.slice(5),null);}});
+if(els.btnExport){els.btnExport.onclick=()=>{ const data={ name:scheme.name, ledgerItems:scheme.ledgerItems, currentLedgerId:scheme.currentLedgerId, nodes:scheme.nodes, roots:scheme.roots }; const blob=new Blob([JSON.stringify(data)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob); a.download=(scheme.name||'allocation-mindmap')+'.json';a.click(); }}
+if(els.btnValidate){els.btnValidate.onclick=validate;}
+if(els.btnReset){els.btnReset.onclick=()=>{ if(!confirm('确认清空当前画布吗？'))return; scheme.name=''; scheme.nodes={}; scheme.roots=[]; scheme.ledgerItems=[]; scheme.currentLedgerId=null; if(els.schemeName) els.schemeName.value=''; renderLedgerTable(); render(); validate(); };}
+['宝点数字体验店-店长','星力展厅店-店长','平台-服务费'].forEach((n,i)=>{const id=addNode(n,null);if(i===2){reparent(id,scheme.roots[0]);}});render();validate();
+const tabEdit=document.getElementById('tabEdit');
+const tabPreview=document.getElementById('tabPreview');
+const editorView=document.getElementById('editorView');
+let previewEl = document.getElementById('preview');
+function nodeLabel(n){const allocs=(n.allocs||[]).slice().sort((a,b)=>a.priority-b.priority);const labels=allocs.map(a=>a.type==='percent'?`P${a.priority}:${a.value}%`:`P${a.priority}:¥ ${a.value}`).join('；');const dep=(n.deposit||0);const prefix=dep>0?`保:¥ ${dep}；`:'';return n.name?`${n.name} · ${prefix}${labels||'未设额度'}`:`(未选择账号) · ${prefix}${labels||'未设额度'}`;}
+function previewBranchHTML(id){ const n=scheme.nodes[id]; const box=`<div class="mindmap-node">${nodeLabel(n)}</div>`; if(n.children&&n.children.length){ const childrenHTML=n.children.map(c=>previewBranchHTML(c)).join(''); return `<div class="mindmap-branch">${box}<div class="mindmap-children">${childrenHTML}</div></div>`; } return `<div class="mindmap-branch">${box}</div>`; }
+function renderPreview(){ const curLedger=scheme.ledgerItems.find(l=>l.id===scheme.currentLedgerId); const central=scheme.name?scheme.name:'机台营收方案'; const ledgerBadge = curLedger ? `<div class="bg-blue-600 text-white rounded-xl px-5 py-2 text-sm">账目：${curLedger.name} · 总额：¥ ${curLedger.total} · 保证金：¥ ${(curLedger.deposit||0)} · 可用：¥ ${(curLedger.total - (curLedger.deposit||0)).toFixed(2)}</div>` : `<div class="bg-gray-200 text-gray-700 rounded-xl px-5 py-2 text-sm">未选择当前账目</div>`; const branches=scheme.roots.map(previewBranchHTML).join('') || '<div class="text-gray-500 text-sm">当前暂无节点，请在编辑模式添加账号节点后再查看预览。</div>'; previewEl.innerHTML=`
+    <div class="space-y-3">
+      ${ledgerBadge}
+      <div class="mindmap-container">
+        <svg class="mindmap-links"></svg>
+        <div class="mindmap-central-node">${central}</div>
+        <div class="mindmap-branches">${branches}</div>
+      </div>
+    </div>
+  `; requestAnimationFrame(()=>drawMindmapLinks()); }
+function switchTab(tab){ if(!previewEl) return; const issuesBlock = els.issues ? els.issues.parentElement : null; if(tab==='edit'){ previewEl.classList.add('hidden'); els.canvas?.classList.remove('hidden'); els.summary?.classList.remove('hidden'); issuesBlock?.classList.remove('hidden'); els.ruleHintBox?.classList.remove('hidden'); tabEdit?.classList.add('bg-blue-500','text-white'); tabPreview?.classList.remove('bg-blue-500','text-white'); }else{ renderPreview(); previewEl.classList.remove('hidden'); els.canvas?.classList.add('hidden'); els.summary?.classList.add('hidden'); issuesBlock?.classList.add('hidden'); els.ruleHintBox?.classList.add('hidden'); tabPreview?.classList.add('bg-blue-500','text-white'); tabEdit?.classList.remove('bg-blue-500','text-white'); } }
+if(tabEdit&&tabPreview){tabEdit.onclick=()=>switchTab('edit');tabPreview.onclick=()=>switchTab('preview');}
+function drawMindmapLinks(){ const preview = document.getElementById('preview'); if(!preview) return; const container = preview.querySelector('.mindmap-container'); if(!container) return; const svg = container.querySelector('.mindmap-links') || (function(){ const s = document.createElementNS('http://www.w3.org/2000/svg','svg'); s.classList.add('mindmap-links'); container.appendChild(s); return s; })(); while(svg.firstChild) svg.removeChild(svg.firstChild); const contRect = container.getBoundingClientRect(); svg.setAttribute('width', container.scrollWidth); svg.setAttribute('height', container.scrollHeight); svg.style.width = container.scrollWidth + 'px'; svg.style.height = container.scrollHeight + 'px'; const central = container.querySelector('.mindmap-central-node'); const firstLevelNodes = container.querySelectorAll('.mindmap-branches > .mindmap-branch > .mindmap-node'); if(central){ firstLevelNodes.forEach(n => addLink(svg, central, n, contRect)); } container.querySelectorAll('.mindmap-branch').forEach(branch => { const fromNode = branch.querySelector(':scope > .mindmap-node'); const childrenNodes = branch.querySelectorAll(':scope > .mindmap-children > .mindmap-branch > .mindmap-node'); childrenNodes.forEach(child => addLink(svg, fromNode, child, contRect)); }); }
+function addLink(svg, fromEl, toEl, contRect){ if(!fromEl || !toEl) return; const fr = fromEl.getBoundingClientRect(); const tr = toEl.getBoundingClientRect(); const x1 = fr.left + fr.width/2 - contRect.left; const y1 = fr.bottom - contRect.top; const x2 = tr.left + tr.width/2 - contRect.left; const y2 = tr.top - contRect.top; const c1x = x1; const c1y = y1 + 40; const c2x = x2; const c2y = y2 - 40; const path = document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d', `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`); path.setAttribute('fill', 'none'); path.setAttribute('stroke', '#d1d5db'); path.setAttribute('stroke-width', '2'); svg.appendChild(path); }
+window.addEventListener('resize', () => { const preview = document.getElementById('preview'); if(preview && !preview.classList.contains('hidden')){ drawMindmapLinks(); } });
+</script>
+
+<!-- 右下角浮动操作按钮 -->
+<div id="floatingActions" class="fixed bottom-6 right-6 flex gap-2 z-50">
+  <button id="btnSaveBottom" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow">
+    <i class="fas fa-save mr-1"></i>保存
+  </button>
+  <button id="btnCancelBottom" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded shadow">
+    取消
+  </button>
+</div>
+
+<script>
+function clearSchemeAll(){ scheme.name = ''; scheme.ledgerItems = []; scheme.currentLedgerId = null; scheme.nodes = {}; scheme.roots = []; idSeq = 1; const nameInput = document.getElementById('schemeName'); if (nameInput) nameInput.value = ''; if (typeof renderLedgerTable === 'function') renderLedgerTable(); if (typeof render === 'function') render(); if (typeof validate === 'function') validate(); ['accountPickerModal','ledgerPickerModal'].forEach(id=>{const m=document.getElementById(id);if(m) m.classList.add('hidden');}); alert('已清空当前页面设置'); }
+function showToast(message, type = 'info') { const toast = document.createElement('div'); toast.className = `fixed top-4 right-4 px-4 py-2 rounded shadow-lg z-50 ${ type === 'error' ? 'bg-red-500 text-white' : type === 'success' ? 'bg-green-500 text-white' : 'bg-blue-500 text-white' }`; toast.textContent = message; document.body.appendChild(toast); setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s ease'; setTimeout(() => { document.body.removeChild(toast); }, 500); }, 3000); }
+function saveSchemeToLocal(){ try { localStorage.setItem('allocation_scheme', JSON.stringify(scheme)); const now = new Date(); const pad = n => String(n).padStart(2,'0'); const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`; const projectId = `PRJ-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`; let list = []; try{ list = JSON.parse(localStorage.getItem('allocation_projects')||'[]')||[]; }catch(e){ list = []; } list.push({ id: projectId, name: scheme.name || '机台营收方案', creator: '当前用户', created: stamp, status: '项目待审核', scheme: JSON.parse(JSON.stringify(scheme)) }); localStorage.setItem('allocation_projects', JSON.stringify(list)); showToast('已保存项目并返回项目创建页', 'success'); setTimeout(()=>{ window.location.href = 'project-create.html'; }, 800); } catch (err) { console.error('保存失败：', err); showToast('保存失败，请重试', 'error'); } }
+function validateAndSave() { const schemeName = document.getElementById('schemeName').value.trim(); if (!schemeName) { showToast('请填写方案名称', 'error'); document.getElementById('schemeName').focus(); return; } if (!scheme.ledgerItems || scheme.ledgerItems.length === 0) { showToast('请至少添加一个账目', 'error'); return; } if (!scheme.roots || scheme.roots.length === 0) { showToast('请至少添加一个分账节点', 'error'); return; } validateAllocation(); const issueList = document.getElementById('issues'); const hasIssues = issueList && issueList.children.length > 0 && !issueList.textContent.includes('未发现问题'); if (hasIssues) { if(!confirm('当前方案存在校验问题，确定要保存吗？')) { return; } } saveSchemeToLocal(); }
+function approveProject() { const projectId = new URLSearchParams(window.location.search).get('projectId'); if (!projectId) { showToast('项目ID不存在', 'error'); return; } if (confirm('确定审核通过该项目吗？')) { showToast('审核通过成功', 'success'); setTimeout(() => { window.location.href = `project_management_rewrite.html?status=approved&projectId=${projectId}`; }, 1500); } }
+function rejectProject() { const projectId = new URLSearchParams(window.location.search).get('projectId'); if (!projectId) { showToast('项目ID不存在', 'error'); return; } const reason = prompt('请输入驳回原因：'); if (reason !== null) { showToast('已驳回该项目', 'success'); setTimeout(() => { window.location.href = `project_management_rewrite.html?status=rejected&projectId=${projectId}`; }, 1500); } }
+function toggleEditMode() { const btnEditBottom = document.getElementById('btnEditBottom'); if (btnEditBottom.textContent.includes('编辑')) { enableEditing(); btnEditBottom.innerHTML = '<i class="fas fa-eye mr-1"></i>预览'; } else { disableEditing(); btnEditBottom.innerHTML = '<i class="fas fa-edit mr-1"></i>编辑'; } }
+function enableEditing() { document.querySelectorAll('input, select, textarea').forEach(el => { el.disabled = false; }); document.querySelectorAll('#normalModeButtons button').forEach(btn => { btn.disabled = false; }); document.querySelectorAll('.palette-item').forEach(item => { item.setAttribute('draggable', 'true'); }); document.querySelectorAll('.node .ops button').forEach(btn => { btn.disabled = false; }); document.querySelectorAll('#ledgerTableBody button').forEach(btn => { btn.disabled = false; }); const btnLedgerAdd = document.getElementById('btnLedgerAdd'); if (btnLedgerAdd) btnLedgerAdd.disabled = false; showToast('已启用编辑模式', 'info'); }
+function disableEditing() { document.querySelectorAll('input, select, textarea').forEach(el => { el.disabled = true; }); document.querySelectorAll('#normalModeButtons button').forEach(btn => { btn.disabled = true; }); document.querySelectorAll('.palette-item').forEach(item => { item.setAttribute('draggable', 'false'); }); showToast('已禁用编辑模式', 'info'); }
+(function(){ const btnSaveBottom = document.getElementById('btnSaveBottom'); const btnCancelBottom = document.getElementById('btnCancelBottom'); const btnApproveBottom = document.getElementById('btnApproveBottom'); const btnRejectBottom = document.getElementById('btnRejectBottom'); const btnEditBottom = document.getElementById('btnEditBottom'); const btnBackBottom = document.getElementById('btnBackBottom'); const bottomActionButtons = document.getElementById('bottomActionButtons'); const urlParams = new URLSearchParams(window.location.search); const mode = urlParams.get('mode'); const projectId = urlParams.get('projectId'); if (mode === 'review' && projectId) { const pageTitle = document.getElementById('pageTitle'); const pageDescription = document.getElementById('pageDescription'); if (pageTitle) pageTitle.textContent = '审核分账项目'; if (pageDescription) pageDescription.textContent = '审核项目内容，点击编辑按钮可修改内容'; if (bottomActionButtons) bottomActionButtons.style.display = 'flex'; if (btnApproveBottom) btnApproveBottom.onclick = approveProject; if (btnRejectBottom) btnRejectBottom.onclick = rejectProject; if (btnEditBottom) btnEditBottom.onclick = toggleEditMode; if (btnBackBottom) btnBackBottom.onclick = () => window.location.href = 'project-create.html'; disableEditing(); document.body.classList.add('review-mode'); try{ const list = JSON.parse(localStorage.getItem('allocation_projects')||'[]')||[]; const proj = list.find(p=>p.id===projectId); if(proj && proj.scheme){ Object.assign(scheme, proj.scheme); const nameInput = document.getElementById('schemeName'); if(nameInput) nameInput.value = scheme.name || ''; if (typeof renderLedgerTable === 'function') renderLedgerTable(); if (typeof render === 'function') render(); if (typeof validate === 'function') validate(); } }catch(e){} } if (btnSaveBottom) btnSaveBottom.onclick = validateAndSave; if (btnCancelBottom) btnCancelBottom.onclick = clearSchemeAll; })();
+</script>
+<script type="module">
+  import { AllocationMindmapView } from './js/views/AllocationMindmapView.js';
+  import { allocationMindmapConfig } from './js/views/config/allocationMindmapConfig.js';
+  const view = new AllocationMindmapView(allocationMindmapConfig);
+  const preview = document.getElementById('preview');
+  if (preview) {
+    view.mount('#preview');
+    const tabPreview = document.getElementById('tabPreview');
+    if (tabPreview) tabPreview.addEventListener('click', () => setTimeout(() => view.mount('#preview'), 0));
+  }
+</script>
+<div id="bottomActionButtons" class="bottom-action-buttons">
+  <button id="btnApproveBottom" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded">
+    <i class="fas fa-check-circle mr-1"></i>审核通过
+  </button>
+  <button id="btnRejectBottom" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded">
+    <i class="fas fa-times-circle mr-1"></i>驳回
+  </button>
+  <button id="btnEditBottom" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">
+    <i class="fas fa-edit mr-1"></i>编辑
+  </button>
+  <button id="btnBackBottom" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded">
+    <i class="fas fa-arrow-left mr-1"></i>返回
+  </button>
+</div>
+</body></html>

@@ -10,7 +10,7 @@
     (function(){
       var parts = (window.location.pathname || '/').split('/').filter(Boolean);
       var base = parts.length ? ('/' + parts[0]) : '/';
-      var target = base + '/design/prototypes/index.html';
+      var target = base + '/design/prototypes/allocation-mindmap.html';
       try{ window.location.replace(target); }catch(e){}
       document.addEventListener('DOMContentLoaded', function(){
         var link = document.getElementById('entry');
@@ -22,7 +22,7 @@
 <body>
   <div>
     <h1>正在跳转到入口页</h1>
-    <p>如未自动跳转，请点击：<a id="entry" href="../design/prototypes/index.html">进入入口页</a></p>
+    <p>如未自动跳转，请点击：<a id="entry" href="../design/prototypes/allocation-mindmap.html">进入入口页</a></p>
   </div>
 </body>
 </html>
