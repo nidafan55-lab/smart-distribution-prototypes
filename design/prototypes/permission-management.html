@@ -14,19 +14,19 @@
       <button id="btnAddPermission" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"><i class="fas fa-plus mr-1"></i>添加权限设置</button>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-      <div>
-        <label class="text-sm text-gray-600">账号分组</label>
-        <select id="filterGroup" class="mt-1 w-full border rounded px-3 py-2">
+    <div class="flex flex-wrap gap-3 mb-4">
+      <div class="inline-flex items-center border rounded-lg overflow-hidden">
+        <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">账号分组</span>
+        <select id="filterGroup" class="px-3 py-2 text-sm focus:outline-none">
           <option value="">全部分组</option>
           <option value="总部">总部</option>
           <option value="区域">区域</option>
           <option value="门店">门店</option>
         </select>
       </div>
-      <div class="md:col-span-2">
-        <label class="text-sm text-gray-600">账号名称</label>
-        <input id="filterName" class="mt-1 w-full border rounded px-3 py-2" placeholder="输入账号名称">
+      <div class="inline-flex items-center border rounded-lg overflow-hidden flex-grow">
+        <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">账号名称</span>
+        <input id="filterName" class="px-3 py-2 text-sm focus:outline-none flex-1" placeholder="输入账号名称">
       </div>
     </div>
 
@@ -77,7 +77,7 @@
 
   <script>
     const data = [
-      { id:'PM-001', created:'2025-11-01 10:00', group:'总部', count:3, name:'总公司', ops:['项目创建','审核'], view:'所有项目' },
+      { id:'PM-001', created:'2025-11-01 10:00', group:'总部', count:3, name:'集团总经理', ops:['项目创建','审核'], view:'所有项目' },
       { id:'PM-002', created:'2025-11-05 09:30', group:'门店', count:12, name:'华东门店组', ops:['账号管理','消息提醒'], view:'账号关联项目' },
       { id:'PM-003', created:'2025-11-10 14:20', group:'区域', count:5, name:'华北区域', ops:['项目创建','账号管理'], view:'所有项目' }
     ];
@@ -93,11 +93,11 @@
     const opOptions = ['项目创建','审核','账号管理','消息提醒'];
     const viewOptions = ['所有项目','账号关联项目'];
     const accountsData = [
-      {id:'AC-001', name:'总公司', phone:'13800000001', group:'总部'},
-      {id:'AC-002', name:'华北分公司', phone:'13800000002', group:'区域'},
-      {id:'AC-003', name:'北京办事处', phone:'13800000003', group:'门店'},
-      {id:'AC-004', name:'华东分公司', phone:'13800000004', group:'区域'},
-      {id:'AC-005', name:'上海办事处', phone:'13800000005', group:'门店'}
+      {id:'AC-001', name:'集团总经理', phone:'13800000001', group:'总部'},
+      {id:'AC-002', name:'区域总经理', phone:'13800000002', group:'区域'},
+      {id:'AC-003', name:'星力展厅店-店长', phone:'13800000003', group:'门店'},
+      {id:'AC-004', name:'宝点数字体验店-店长', phone:'13800000004', group:'门店'},
+      {id:'AC-005', name:'星力展厅店-店长', phone:'13800000005', group:'门店'}
     ];
     const groupsData = ['总部','区域','门店'];
 

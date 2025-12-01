@@ -41,51 +41,116 @@
         <button id="btnCloseModal" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
       </div>
       <div class="p-6 space-y-4">
+        <div id="simpleNewRuleSection" class="space-y-4 hidden">
+          <div class="text-sm font-medium text-gray-700">基础信息</div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="label">规则名称</label>
+              <input id="simpleRuleName" class="input" placeholder="请输入规则名称" />
+            </div>
+            <div>
+              <label class="label">项目类型</label>
+              <select id="simpleProjectType" class="input">
+                <option value="current">活期项目</option>
+                <option value="fixed">定期项目</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">生效时间</label>
+              <input id="simpleEffectiveTime" type="datetime-local" class="input" />
+            </div>
+            <div id="simpleExpireWrap" class="md:col-span-3">
+              <label class="label">失效时间</label>
+              <input id="simpleExpireTime" type="datetime-local" class="input" />
+            </div>
+          </div>
+          <div class="text-sm font-medium text-gray-700">账目设置</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="label">账目类型</label>
+              <select id="simpleLedgerScopeType" class="input">
+                <option value="single">单门店账目</option>
+                <option value="multi">多门店账目</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="advancedRuleSection">
+        <div class="text-sm font-medium text-gray-700">基础信息</div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="label">规则名称</label>
             <input id="ruleName" class="input" placeholder="例如：标准分账规则" />
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="label">保证金额度（倍数 - 最小）</label>
-              <input id="minMultiplier" type="number" step="0.1" min="0" class="input" placeholder="如 1.0" />
-            </div>
-            <div>
-              <label class="label">保证金额度（倍数 - 最大）</label>
-              <input id="maxMultiplier" type="number" step="0.1" min="0" class="input" placeholder="如 3.0" />
-            </div>
-          </div>
-          <div>
-            <label class="label">活期账目 - 结算分账时间设置</label>
-            <select id="currentSettlementType" class="input"></select>
-          </div>
-          <div>
-            <label class="label">定期账目 - 结算分账时间设置</label>
-            <select id="fixedSettlementType" class="input"></select>
-          </div>
+          <div></div>
         </div>
 
-        <!-- 动态结算字段：活期/定期分别配置 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="text-sm font-medium text-gray-700">账目设置</div>
+        <div class="grid grid-cols-2 gap-6">
           <div>
-            <div class="text-sm text-gray-600 mb-2">活期账目 - 详细设置</div>
+            <div class="text-sm text-gray-600 mb-2">活期账目 - 结算分账时间设置</div>
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">结算方式</span>
+              <select id="currentSettlementType" class="px-3 py-2 text-sm focus:outline-none flex-1"></select>
+            </div>
+            <div class="text-sm text-gray-600 mt-4 mb-2">活期账目 - 详细设置</div>
             <div id="currentSettlementFields" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
           </div>
           <div>
-            <div class="text-sm text-gray-600 mb-2">定期账目 - 详细设置</div>
+            <div class="text-sm text-gray-600 mb-2">定期账目 - 结算分账时间设置</div>
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">结算方式</span>
+              <select id="fixedSettlementType" class="px-3 py-2 text-sm focus:outline-none flex-1"></select>
+            </div>
+            <div class="text-sm text-gray-600 mt-4 mb-2">定期账目 - 详细设置</div>
             <div id="fixedSettlementFields" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="label">分账方式</label>
-            <select id="splitMethod" class="input">
-              <option value="manual">手动分账</option>
-              <option value="auto">自动分账</option>
+            <label class="label">规则类型</label>
+            <select id="ruleTypePrimary" class="input">
+              <option value="ratio">按比例</option>
+              <option value="amount">按金额</option>
+              <option value="mixed">混合账目</option>
+              <option value="custom">自定义</option>
             </select>
           </div>
+          <div id="ruleTypeSecondaryWrap">
+            <label class="label">分成方式</label>
+            <select id="ruleTypeSecondary" class="input">
+              <option value="normal">常规分成</option>
+              <option value="ladder">阶梯式分成</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="customConfigSection" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="label">保证金额度（倍数 - 最小）</label>
+                <input id="minMultiplier" type="number" step="0.1" min="0" class="input" placeholder="如 1.0" />
+              </div>
+              <div>
+                <label class="label">保证金额度（倍数 - 最大）</label>
+                <input id="maxMultiplier" type="number" step="0.1" min="0" class="input" placeholder="如 3.0" />
+              </div>
+            </div>
+            <div></div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="label">分账方式</label>
+              <select id="splitMethod" class="input">
+                <option value="manual">手动分账</option>
+                <option value="auto">自动分账</option>
+              </select>
+            </div>
+          </div>
+        </div>
         </div>
       </div>
       <div class="p-6 border-t flex justify-end space-x-3">
@@ -172,11 +237,41 @@
       document.getElementById('modalBackdrop').style.display = 'flex';
       document.getElementById('modalTitle').textContent = index===null ? '新建规则' : '编辑规则';
 
-      const rule = index===null ? {} : rules[index];
+      const isNew = index === null;
+      const simple = document.getElementById('simpleNewRuleSection');
+      const adv = document.getElementById('advancedRuleSection');
+      if (isNew){
+        if (simple) simple.classList.remove('hidden');
+        if (adv) adv.classList.add('hidden');
+        const rn = document.getElementById('simpleRuleName');
+        const pt = document.getElementById('simpleProjectType');
+        const st = document.getElementById('simpleEffectiveTime');
+        const et = document.getElementById('simpleExpireTime');
+        const lt = document.getElementById('simpleLedgerScopeType');
+        if (rn) rn.value = '节假日活动营收分成';
+        if (pt) pt.value = 'fixed';
+        if (st) st.value = '2025-11-19T00:00';
+        if (et) et.value = '';
+        if (lt) lt.value = 'single';
+        const sv = pt ? pt.value : 'current';
+        const wrap = document.getElementById('simpleExpireWrap');
+        if (wrap){ if (sv==='fixed'){ wrap.classList.add('hidden'); } else { wrap.classList.remove('hidden'); } }
+        if (pt){ pt.onchange = (e)=>{ const v=e.target.value; const w=document.getElementById('simpleExpireWrap'); if (w){ if (v==='fixed'){ w.classList.add('hidden'); const et=document.getElementById('simpleExpireTime'); if (et) et.value=''; } else { w.classList.remove('hidden'); } } }; }
+        return;
+      }
+
+      if (simple) simple.classList.add('hidden');
+      if (adv) adv.classList.remove('hidden');
+
+      const rule = rules[index];
       document.getElementById('ruleName').value = rule.name || '';
+      const tp = rule.typePrimary || 'custom';
+      const ts = rule.typeSecondary || 'normal';
+      document.getElementById('ruleTypePrimary').value = tp;
+      document.getElementById('ruleTypeSecondary').value = ts;
+      applyRuleTypeVisibility(tp);
       document.getElementById('minMultiplier').value = rule.minMultiplier ?? '';
       document.getElementById('maxMultiplier').value = rule.maxMultiplier ?? '';
-      // 初始化活期/定期选项
       updateCurrentSettlementOptions();
       updateFixedSettlementOptions();
       const curType = rule.current?.type || document.getElementById('currentSettlementType').value;
@@ -188,6 +283,13 @@
       document.getElementById('splitMethod').value = rule.splitMethod || 'manual';
     }
     function closeModal(){ document.getElementById('modalBackdrop').style.display = 'none'; editIndex = null; }
+
+    function applyRuleTypeVisibility(val){
+      const w = document.getElementById('ruleTypeSecondaryWrap');
+      const c = document.getElementById('customConfigSection');
+      if (val === 'custom') { w.classList.add('hidden'); c.classList.remove('hidden'); }
+      else { w.classList.remove('hidden'); c.classList.add('hidden'); }
+    }
 
     function updateCurrentSettlementOptions(){
       const sel = document.getElementById('currentSettlementType');
@@ -291,26 +393,43 @@
 
     // 保存表单
     function onSave(){
+      const simple = document.getElementById('simpleNewRuleSection');
+      const isSimple = simple && !simple.classList.contains('hidden');
+      if (isSimple){
+        const name = document.getElementById('simpleRuleName').value.trim();
+        const projectType = document.getElementById('simpleProjectType').value;
+        const effectiveTime = document.getElementById('simpleEffectiveTime').value;
+        let expireTime = document.getElementById('simpleExpireTime').value;
+        if (projectType==='fixed'){ expireTime=''; }
+        const ledgerScopeType = document.getElementById('simpleLedgerScopeType').value;
+        if (!name){ alert('请填写规则名称'); return; }
+        const payload = { name, projectType, effectiveTime, expireTime, ledgerScopeType };
+        rules.push(payload);
+        saveRules(); renderRules(); closeModal();
+        return;
+      }
+
       const name = document.getElementById('ruleName').value.trim();
+      const typePrimary = document.getElementById('ruleTypePrimary').value;
+      const typeSecondary = document.getElementById('ruleTypeSecondary').value;
+      if (!name){ alert('请填写规则名称'); return; }
+      if (typePrimary !== 'custom'){
+        const payload = { name, typePrimary, typeSecondary };
+        if (editIndex === null){ rules.push(payload); } else { rules[editIndex] = payload; }
+        saveRules(); renderRules(); closeModal();
+        return;
+      }
       const minMul = parseFloat(document.getElementById('minMultiplier').value);
       const maxMul = parseFloat(document.getElementById('maxMultiplier').value);
       const currentType = document.getElementById('currentSettlementType').value;
       const fixedType = document.getElementById('fixedSettlementType').value;
       const splitMethod = document.getElementById('splitMethod').value;
-      if (!name){ alert('请填写规则名称'); return; }
       if (isNaN(minMul) || isNaN(maxMul)){ alert('请填写保证金额度倍数范围'); return; }
       if (minMul > maxMul){ alert('保证金额度最小值不能大于最大值'); return; }
-
-      // 两类账目均需设置
       const current = collectCurrentSettlement(currentType);
       const fixed = collectFixedSettlement(fixedType);
-      const payload = { name, minMultiplier: minMul, maxMultiplier: maxMul, current, fixed, splitMethod };
-
-      if (editIndex === null){
-        rules.push(payload);
-      } else {
-        rules[editIndex] = payload;
-      }
+      const payload = { name, typePrimary, typeSecondary, minMultiplier: minMul, maxMultiplier: maxMul, current, fixed, splitMethod };
+      if (editIndex === null){ rules.push(payload); } else { rules[editIndex] = payload; }
       saveRules(); renderRules(); closeModal();
     }
 
@@ -322,6 +441,7 @@
       document.getElementById('btnCloseModal').addEventListener('click', closeModal);
       document.getElementById('btnCancel').addEventListener('click', closeModal);
       document.getElementById('btnSave').addEventListener('click', onSave);
+      document.getElementById('ruleTypePrimary').addEventListener('change', (e) => applyRuleTypeVisibility(e.target.value));
       document.getElementById('currentSettlementType').addEventListener('change', (e) => renderCurrentSettlementFields(e.target.value, null));
       document.getElementById('fixedSettlementType').addEventListener('change', (e) => renderFixedSettlementFields(e.target.value, null));
 

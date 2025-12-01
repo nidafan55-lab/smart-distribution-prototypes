@@ -27,26 +27,76 @@ body.review-mode .bottom-action-buttons {
 <!-- 普通模式下的按钮 -->
 <div id="normalModeButtons">
   
-</div>
-</div></div><div class="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
+</div></div></div><div class="p-4 rounded-lg mb-4 space-y-6">
+  <div class="text-sm font-medium text-gray-700 mb-2">项目名称</div>
   <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-    <div class="md:col-span-4 md:col-span-3">
-      <label class="text-sm text-gray-500">项目名称</label>
+    <div class="md:col-span-4">
       <input id="schemeName" class="mt-1 w-full border rounded px-3 py-2" placeholder="例如：10月渠道分账方案">
     </div>
   </div>
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-    <div class="md:col-span-4 md:col-span-3">
-      <label class="text-sm text-gray-500">分账规则</label>
-      <select id="ruleSelect" class="mt-1 w-full border rounded px-3 py-2">
-        <option value="">请选择分账规则</option>
-        <option value="default">默认规则</option>
-        <option value="priority">优先级分配</option>
-        <option value="ladder">阶梯分配</option>
-        <option value="mixed">混合规则</option>
+  <div class="text-sm font-medium text-gray-700 mb-2">项目规则</div>
+  <div class="mb-2 flex items-center gap-4">
+    <label class="inline-flex items-center"><input type="radio" name="ruleSource" id="ruleSourceNew" value="new" checked><span class="ml-2">新增规则</span></label>
+    <label class="inline-flex items-center"><input type="radio" name="ruleSource" id="ruleSourceExisting" value="existing"><span class="ml-2">选择现有规则</span></label>
+    <div id="ruleExistingSelectCont" class="hidden inline-flex items-center border rounded-lg overflow-hidden">
+      <span class="px-3 py-2 text-sm text-gray-900 font-medium">规则选择</span>
+      <select id="ruleExistingSelect" class="px-3 py-2 text-sm focus:outline-none">
+        <option value="">请选择</option>
       </select>
     </div>
   </div>
+  <div id="ruleEditorFields" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+    <div class="md:col-span-4">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">规则名称</span>
+        <input id="ruleCfgName" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none" placeholder="请输入规则名称">
+      </div>
+    </div>
+    <div class="md:col-span-3">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">项目类型</span>
+        <select id="ruleCfgType" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none">
+          <option value="current">活期项目</option>
+          <option value="fixed">定期项目</option>
+        </select>
+      </div>
+    </div>
+    <div class="md:col-span-5">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">生效时间</span>
+        <input id="ruleCfgStart" type="datetime-local" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none">
+      </div>
+    </div>
+    <div id="ruleCfgEndCont" class="md:col-span-5 hidden">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">失效时间</span>
+        <input id="ruleCfgEnd" type="datetime-local" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none">
+      </div>
+    </div>
+  </div>
+  <div class="text-sm font-medium text-gray-700 mb-2">账目设置</div>
+  <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center mb-2">
+    <div class="md:col-span-4">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">账目类型</span>
+        <select id="ledgerScopeType" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none">
+          <option value="single">单门店账目</option>
+          <option value="multi">多门店账目</option>
+        </select>
+      </div>
+    </div>
+    <div class="md:col-span-8">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">指定门店</span>
+        <button id="btnPickStores" class="px-3 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded">添加门店</button>
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center justify-between mb-1">
+    <div class="text-sm font-medium text-gray-700">已选门店</div>
+    <div id="selectedStoresCount" class="text-xs text-gray-500">0 个</div>
+  </div>
+  <div id="selectedStores" class="flex flex-wrap gap-2 mb-2"></div>
   <div class="mb-2 text-left space-x-2">
     <button id="btnLedgerAdd" class="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded"><i class="fas fa-plus mr-1"></i>新增账目</button>
     <button id="btnBatchEditTerminals" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">批量编辑终端</button>
@@ -58,8 +108,6 @@ body.review-mode .bottom-action-buttons {
           <tr class="bg-gray-100">
             <th class="text-center px-3 py-2 w-10"><input type="checkbox" id="ledgerSelectAll"></th>
             <th class="text-left px-3 py-2">账目名称</th>
-            <th class="text-left px-3 py-2">账目类型</th>
-            <th class="text-left px-3 py-2">营收时间</th>
             <th class="text-left px-3 py-2">终端</th>
             <th class="text-center px-3 py-2">操作</th>
           </tr>
@@ -71,15 +119,16 @@ body.review-mode .bottom-action-buttons {
   </div>
   <div class="text-xs text-gray-500">提示：每个父级的子项 百分比≤100%、定额≤账目总额</div>
 </div>
+<div class="text-sm font-medium text-gray-700 mb-2">账户设置</div>
 <div id="editorView" class="grid grid-cols-1 md:grid-cols-4 gap-4">
   <div class="md:col-span-1 hidden">
     <h3 class="text-lg font-medium mb-2">账号库（拖拽到右侧画布）</h3>
     <input id="search" class="w-full border rounded px-2 py-1 mb-2" placeholder="搜索账号">
     <div id="palette" class="space-y-2">
-      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">门店-杭州西湖</div>
-      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">门店-深圳南山</div>
-      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">渠道-抖音</div>
-      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">渠道-线下POS</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">星力展厅店-店长</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">宝点数字体验店-店长</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">宝点数字体验店-店长</div>
+      <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">星力展厅店-店长</div>
       <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">平台-服务费</div>
       <div class="palette-item bg-white border rounded px-3 py-2" draggable="true">代理-华东大区</div>
     </div>
@@ -122,6 +171,26 @@ body.review-mode .bottom-action-buttons {
           <ul id="issues" class="list-disc list-inside text-yellow-700 text-sm"></ul>
         </div>
         <div id="preview" class="hidden p-4"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- 门店选择弹窗 -->
+<div id="storePickerModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h4 class="text-lg font-medium">选择门店</h4>
+      <button id="storePickerClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="storePickerList" class="max-h-60 overflow-auto border rounded p-2 space-y-1"></div>
+    <div class="flex items-center justify-between mt-3">
+      <div class="space-x-2">
+        <button id="storePickerSelectAll" class="text-blue-600 text-sm">全选</button>
+        <button id="storePickerClear" class="text-gray-600 text-sm">清空</button>
+      </div>
+      <div class="space-x-2">
+        <button id="storePickerCancel" class="px-3 py-1 bg-gray-200 rounded">取消</button>
+        <button id="storePickerConfirm" class="px-3 py-1 bg-blue-600 text-white rounded">确定</button>
       </div>
     </div>
   </div>
@@ -133,7 +202,10 @@ body.review-mode .bottom-action-buttons {
       <h4 class="text-lg font-medium">选择账目</h4>
       <button id="accountPickerClose" class="text-gray-500"><i class="fas fa-times"></i></button>
     </div>
-    <input id="accountPickerSearch" class="w-full border rounded px-2 py-1 mb-2" placeholder="搜索账号">
+    <div class="inline-flex items-center border rounded-lg overflow-hidden mb-2 w-full">
+      <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">搜索账号</span>
+      <input id="accountPickerSearch" class="px-3 py-2 text-sm focus:outline-none flex-1" placeholder="搜索账号">
+    </div>
     <div id="accountPickerList" class="max-h-60 overflow-auto border rounded p-2 space-y-1"></div>
     <div class="flex items-center justify-between mt-3">
       <div class="space-x-2">
@@ -162,7 +234,7 @@ body.review-mode .bottom-action-buttons {
       <label class="inline-flex items-center"><input type="radio" name="ledgerType" value="store" class="ledger-type-radio" checked><span class="ml-2">门店营收</span></label>
     </div>
     <!-- 筛选器（按类型动态渲染） -->
-    <div id="ledgerTypeFilters" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3"></div>
+    <div id="ledgerTypeFilters" class="flex flex-wrap gap-3 mb-3"></div>
     <!-- 表格 -->
     <div class="border rounded overflow-hidden">
       <table class="w-full text-sm">
@@ -204,10 +276,34 @@ body.review-mode .bottom-action-buttons {
     </div>
   </div>
 </div>
-<script>const scheme={name:'',rule:'',ledgerItems:[],currentLedgerId:null,nodes:{},roots:[]};let idSeq=1;const accountOptions=['账号一','账号二','账号三','账号四','账号五','门店-杭州西湖','门店-深圳南山','渠道-抖音','渠道-线下POS','平台-服务费','代理-华东大区'];
+<script>const scheme={name:'',rule:'',ruleName:'',accountType:'current',effectiveTime:'',expireTime:'',storeMode:'single',selectedStores:[],ledgerItems:[],currentLedgerId:null,nodes:{},roots:[]};let idSeq=1;const accountOptions=['账号一','账号二','账号三','账号四','账号五','星力展厅店-店长','宝点数字体验店-店长','宝点数字体验店-店长','星力展厅店-店长','平台-服务费','代理-华东大区'];
 // 可选择的终端列表
 const terminalOptions=['小程序','收银台#000001','收银台#000002','pos机#000001','pos机#000002'];
-const els={schemeName:document.getElementById('schemeName'),ruleSelect:document.getElementById('ruleSelect'),palette:document.getElementById('palette'),search:document.getElementById('search'),root:document.getElementById('root'),canvas:document.getElementById('canvas'),issues:document.getElementById('issues'),summary:document.getElementById('summary'),btnExport:document.getElementById('btnExport'),btnValidate:document.getElementById('btnValidate'),btnReset:document.getElementById('btnReset'),btnLedgerAdd:document.getElementById('btnLedgerAdd'),btnBatchEditTerminals:document.getElementById('btnBatchEditTerminals'),ledgerTableBody:document.getElementById('ledgerTableBody'),ledgerEmptyHint:document.getElementById('ledgerEmptyHint'),ruleHintBox:document.getElementById('ruleHintBox')};els.schemeName.oninput=()=>scheme.name=els.schemeName.value;if(els.ruleSelect){els.ruleSelect.onchange=()=>scheme.rule=els.ruleSelect.value;}els.search.oninput=()=>{const k=els.search.value.trim().toLowerCase();[...els.palette.children].forEach(x=>x.style.display=(k&& !x.textContent.toLowerCase().includes(k))?'none':'');};[...els.palette.children].forEach(item=>{item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain','palette:'+item.textContent.trim());});});let dragId=null;
+const ruleTemplates=[
+  {id:'R001',name:'门店日常营收分成',accountType:'current',effectiveTime:'2025-11-01T00:00',expireTime:''},
+  {id:'R002',name:'节假日活动营收分成',accountType:'fixed',effectiveTime:'2025-11-19T00:00',expireTime:'2025-11-25T23:59'}
+];
+const els={schemeName:document.getElementById('schemeName'),ruleCfgName:document.getElementById('ruleCfgName'),ruleCfgType:document.getElementById('ruleCfgType'),ruleCfgStart:document.getElementById('ruleCfgStart'),ruleCfgEnd:document.getElementById('ruleCfgEnd'),ruleSourceNew:document.getElementById('ruleSourceNew'),ruleSourceExisting:document.getElementById('ruleSourceExisting'),ruleExistingSelectCont:document.getElementById('ruleExistingSelectCont'),ruleExistingSelect:document.getElementById('ruleExistingSelect'),ruleEditorFields:document.getElementById('ruleEditorFields'),ledgerScopeType:document.getElementById('ledgerScopeType'),btnPickStores:document.getElementById('btnPickStores'),selectedStores:document.getElementById('selectedStores'),palette:document.getElementById('palette'),search:document.getElementById('search'),root:document.getElementById('root'),canvas:document.getElementById('canvas'),issues:document.getElementById('issues'),summary:document.getElementById('summary'),btnExport:document.getElementById('btnExport'),btnValidate:document.getElementById('btnValidate'),btnReset:document.getElementById('btnReset'),btnLedgerAdd:document.getElementById('btnLedgerAdd'),btnBatchEditTerminals:document.getElementById('btnBatchEditTerminals'),ledgerTableBody:document.getElementById('ledgerTableBody'),ledgerEmptyHint:document.getElementById('ledgerEmptyHint'),ruleHintBox:document.getElementById('ruleHintBox')};
+els.schemeName.oninput=()=>scheme.name=els.schemeName.value;
+if(els.ruleCfgName){els.ruleCfgName.oninput=()=>scheme.ruleName=els.ruleCfgName.value;}
+function toggleEndByType(val){const c=document.getElementById('ruleCfgEndCont');if(val==='fixed'){c.classList.remove('hidden');}else{c.classList.add('hidden');}}
+if(els.ruleCfgType){els.ruleCfgType.onchange=()=>{scheme.accountType=els.ruleCfgType.value;toggleEndByType(scheme.accountType);};}
+function setRuleFieldsDisabled(dis){['ruleCfgName','ruleCfgType','ruleCfgStart','ruleCfgEnd'].forEach(k=>{if(els[k]) els[k].disabled=!!dis;});}
+function populateRuleExistingOptions(){if(!els.ruleExistingSelect) return; els.ruleExistingSelect.innerHTML='<option value="">请选择</option>'+ruleTemplates.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');}
+function applyRuleTemplateById(id){const tpl=ruleTemplates.find(x=>x.id===id);if(!tpl) return; if(els.ruleCfgName) els.ruleCfgName.value=tpl.name; if(els.ruleCfgType) els.ruleCfgType.value=tpl.accountType; if(els.ruleCfgStart) els.ruleCfgStart.value=tpl.effectiveTime||''; if(els.ruleCfgEnd) els.ruleCfgEnd.value=tpl.expireTime||''; scheme.ruleName=tpl.name; scheme.accountType=tpl.accountType; scheme.effectiveTime=tpl.effectiveTime||''; scheme.expireTime=tpl.expireTime||''; toggleEndByType(scheme.accountType); setRuleFieldsDisabled(true);}
+function switchRuleSource(src){if(src==='existing'){ if(els.ruleExistingSelectCont) els.ruleExistingSelectCont.classList.remove('hidden'); setRuleFieldsDisabled(true); } else { if(els.ruleExistingSelectCont) els.ruleExistingSelectCont.classList.add('hidden'); setRuleFieldsDisabled(false); }}
+populateRuleExistingOptions();
+if(els.ruleSourceNew){els.ruleSourceNew.onchange=()=>switchRuleSource('new');}
+if(els.ruleSourceExisting){els.ruleSourceExisting.onchange=()=>switchRuleSource('existing');}
+if(els.ruleExistingSelect){els.ruleExistingSelect.onchange=()=>applyRuleTemplateById(els.ruleExistingSelect.value);} 
+function renderSelectedStores(){const cont=els.selectedStores;if(!cont) return; const items=(scheme.selectedStores||[]).map(s=>`<span class="inline-flex items-center px-2 py-1 bg-gray-100 text-sm text-gray-700 rounded">${s.name}<button class="ml-2 text-red-600 remove-store" data-id="${s.id}"><i class="fas fa-times"></i></button></span>`).join(''); cont.innerHTML=items||'<span class="text-xs text-gray-400">未指定门店</span>'; if(items){ cont.querySelectorAll('button.remove-store').forEach(b=>{ b.onclick=()=>{ const id=b.dataset.id; scheme.selectedStores=scheme.selectedStores.filter(x=>x.id!==id); renderSelectedStores(); }; }); } const cnt=document.getElementById('selectedStoresCount'); if(cnt) cnt.textContent=((scheme.selectedStores||[]).length||0)+' 个'; }
+if(els.ledgerScopeType){ els.ledgerScopeType.onchange=()=>{ scheme.storeMode = els.ledgerScopeType.value==='multi' ? 'multi' : 'single'; if(scheme.storeMode==='single' && Array.isArray(scheme.selectedStores) && scheme.selectedStores.length>1){ scheme.selectedStores = scheme.selectedStores.slice(0,1); renderSelectedStores(); } }; }
+if(els.btnPickStores){ els.btnPickStores.onclick=()=>openStorePicker(); }
+renderSelectedStores();
+if(els.ruleCfgStart){els.ruleCfgStart.onchange=()=>scheme.effectiveTime=els.ruleCfgStart.value;}
+if(els.ruleCfgEnd){els.ruleCfgEnd.onchange=()=>scheme.expireTime=els.ruleCfgEnd.value;}
+toggleEndByType(els.ruleCfgType?els.ruleCfgType.value:'current');
+els.search.oninput=()=>{const k=els.search.value.trim().toLowerCase();[...els.palette.children].forEach(x=>x.style.display=(k&& !x.textContent.toLowerCase().includes(k))?'none':'');};[...els.palette.children].forEach(item=>{item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain','palette:'+item.textContent.trim());});});let dragId=null;
 // 批量选择账目上下文与函数
 const pickContext={parentId:null};
 // 终端选择上下文
@@ -276,6 +372,60 @@ function commitTerminals(){
     document.querySelectorAll('#terminalPickerList input.terminal-pick').forEach(c=>c.checked=false);
   };
 })();
+// 门店选择弹窗
+const storePickContext={};
+function openStorePicker(){
+  const modal=document.getElementById('storePickerModal');
+  const list=document.getElementById('storePickerList');
+  const selAll=document.getElementById('storePickerSelectAll');
+  const clr=document.getElementById('storePickerClear');
+  const mode=scheme.storeMode==='multi'?'multi':'single';
+  const selected=new Set((scheme.selectedStores||[]).map(s=>s.id));
+  const items=(ledgerData.store||[]).map(s=>{
+    const checked=selected.has(s.id)? (mode==='single'?'checked':'checked') : '';
+    const dn=(s.storeName||'').replace(/-店长$/,'');
+    if(mode==='single'){
+      return `<label class="flex items-center justify-between px-2 py-1 rounded hover:bg-gray-50"><span class="text-sm">${dn}</span><input type="radio" name="store-pick" class="store-pick" value="${s.id}" ${checked}></label>`;
+    }
+    return `<label class="flex items-center justify-between px-2 py-1 rounded hover:bg-gray-50"><span class="text-sm">${dn}</span><input type="checkbox" class="store-pick" value="${s.id}" ${checked}></label>`;
+  }).join('');
+  list.innerHTML=items;
+  if(selAll) selAll.style.display = (mode==='single') ? 'none' : '';
+  modal.classList.remove('hidden');
+}
+function closeStorePicker(){document.getElementById('storePickerModal')?.classList.add('hidden');}
+function commitStorePick(){
+  const mode=scheme.storeMode==='multi'?'multi':'single';
+  let pickedIds=[];
+  if(mode==='single'){
+    const r=document.querySelector('#storePickerList input.store-pick[type="radio"]:checked');
+    if(r) pickedIds=[r.value];
+  }else{
+    const checks=document.querySelectorAll('#storePickerList input.store-pick[type="checkbox"]:checked');
+    pickedIds=[...checks].map(c=>c.value);
+  }
+  const map=new Map((ledgerData.store||[]).map(s=>{const dn=(s.storeName||'').replace(/-店长$/,''); return [s.id,{id:s.id,name:dn}];}));
+  scheme.selectedStores = pickedIds.map(id=>map.get(id)).filter(Boolean);
+  renderSelectedStores();
+  closeStorePicker();
+}
+// 门店弹窗事件绑定
+(function(){
+  const btnC=document.getElementById('storePickerConfirm');
+  const btnX=document.getElementById('storePickerCancel');
+  const btnClose=document.getElementById('storePickerClose');
+  const btnAll=document.getElementById('storePickerSelectAll');
+  const btnClear=document.getElementById('storePickerClear');
+  if(btnC) btnC.onclick=commitStorePick;
+  if(btnX) btnX.onclick=closeStorePicker;
+  if(btnClose) btnClose.onclick=closeStorePicker;
+  if(btnAll) btnAll.onclick=()=>{
+    document.querySelectorAll('#storePickerList input.store-pick[type="checkbox"]').forEach(c=>c.checked=true);
+  };
+  if(btnClear) btnClear.onclick=()=>{
+    document.querySelectorAll('#storePickerList input.store-pick').forEach(c=>c.checked=false);
+  };
+})();
 // 顶部“新增账目”按钮：打开账目选择弹窗（支持批量）
 /* 画布区域“新增账目”按钮已移除 */
 if(els.btnLedgerAdd){els.btnLedgerAdd.onclick=()=>openLedgerPicker();}
@@ -336,26 +486,26 @@ const ledgerTypeLabels={product:'商品',combo:'套餐',machine:'机台',store:'
 // 示例数据（可替换为接口数据）
 const ledgerData={
   store:[
-    {id:'S301',storeName:'门店-杭州西湖',city:'杭州'},
-    {id:'S302',storeName:'门店-深圳南山',city:'深圳'},
-    {id:'S303',storeName:'门店-上海浦东',city:'上海'},
-    {id:'S304',storeName:'门店-北京朝阳',city:'北京'}
+    {id:'S301',storeName:'星力展厅店-店长',city:'广州'},
+    {id:'S302',storeName:'宝点数字体验店-店长',city:'深圳'},
+    {id:'S303',storeName:'星力展厅店-店长',city:'上海'},
+    {id:'S304',storeName:'宝点数字体验店-店长',city:'北京'}
   ],
   product:[
-    {id:'P001',name:'可乐',group:'饮料',tag:'畅销',source:'自营',price:3.5,stock:120},
-    {id:'P002',name:'薯片',group:'零食',tag:'新品',source:'联营',price:6.8,stock:80},
-    {id:'P003',name:'牙刷',group:'日用品',tag:'促销',source:'自营',price:12,stock:50},
-    {id:'P004',name:'矿泉水',group:'饮料',tag:'畅销',source:'自营',price:2.5,stock:300}
+    {id:'P001',name:'可乐',group:'日常营销',tag:'畅销',source:'集团',price:3.5,stock:120},
+    {id:'P002',name:'春节大礼包',group:'节日礼品',tag:'新品',source:'门店',price:6.8,stock:80},
+    {id:'P003',name:'哪吒',group:'专题礼品',tag:'促销',source:'门店',price:12,stock:50},
+    {id:'P004',name:'labubu',group:'专题礼品',tag:'畅销',source:'门店',price:2.5,stock:300}
   ],
   combo:[
-    {id:'C101',name:'工作日午餐套餐',type:'午餐',source:'自营',group:'工作日',price:25},
-    {id:'C102',name:'双人下午茶',type:'下午茶',source:'联营',group:'双人',price:58},
-    {id:'C103',name:'儿童套餐',type:'儿童',source:'自营',group:'亲子',price:22}
+    {id:'C101',name:'星力展厅店10次票',type:'计次票',source:'门店',group:'计次票套餐',price:25},
+    {id:'C102',name:'全门店通用10次票',type:'计次票',source:'集团',group:'计次票套餐',price:58},
+    {id:'C103',name:'星力展厅店年票',type:'期限票',source:'集团',group:'期限票套餐',price:22}
   ],
   machine:[
-    {id:'M201',name:'售货机-一楼',serial:'VM-001',commId:'C-1001',modelName:'售货机'},
-    {id:'M202',name:'咖啡机-大堂',serial:'CF-101',commId:'C-2002',modelName:'咖啡机'},
-    {id:'M203',name:'娃娃机-A区',serial:'CL-777',commId:'C-3003',modelName:'夹娃娃机'}
+    {id:'M201',name:'太鼓达人',serial:'VM-001',commId:'C-1001',modelName:'模拟机'},
+    {id:'M202',name:'积木派队',serial:'CF-101',commId:'C-2002',modelName:'彩票机'},
+    {id:'M203',name:'单人娃娃机',serial:'CL-777',commId:'C-3003',modelName:'娃娃机'}
   ]
 };
 // 类型模式定义：筛选器与表格列
@@ -449,15 +599,30 @@ function renderLedgerTypeFilters(){
   const cont=document.getElementById('ledgerTypeFilters');
   if(!cont) return;
   const schema=typeSchemas[currentLedgerPickType];
+  if(!schema){
+    cont.innerHTML='<div class="text-sm text-gray-500">当前类型未配置筛选器</div>';
+    return;
+  }
   filterState[currentLedgerPickType]=filterState[currentLedgerPickType]||{};
   cont.innerHTML=schema.filters.map(f=>{
     if(f.type==='input'){
       const val=filterState[currentLedgerPickType][f.key]||'';
-      return `<div><input id="ledgerFilter_${f.key}" class="w-full border rounded px-2 py-1" placeholder="${f.placeholder||''}" value="${val}"></div>`;
+      const lab=f.placeholder||'关键词';
+      return `<div class="inline-flex items-center border rounded-lg overflow-hidden">
+        <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">${lab}</span>
+        <input id="ledgerFilter_${f.key}" class="px-3 py-2 text-sm focus:outline-none" placeholder="${f.placeholder||''}" value="${val}">
+      </div>`;
     } else {
       const opts=getSelectOptions(currentLedgerPickType,f.key);
       const val=filterState[currentLedgerPickType][f.key]||'';
-      return `<div><select id="ledgerFilter_${f.key}" class="w-full border rounded px-2 py-1"><option value="">全部${f.label||''}</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+      const lab=f.label||'选项';
+      return `<div class="inline-flex items-center border rounded-lg overflow-hidden">
+        <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">${lab}</span>
+        <select id="ledgerFilter_${f.key}" class="px-3 py-2 text-sm focus:outline-none">
+          <option value="">全部${f.label||''}</option>
+          ${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>`;
     }
   }).join('');
   // bind events
@@ -473,12 +638,20 @@ function renderLedgerTypeTable(){
   const tbody=document.getElementById('ledgerTypeTableBody');
   if(!thead || !tbody) return;
   const schema=typeSchemas[currentLedgerPickType];
+  if(!schema){
+    thead.innerHTML='';
+    tbody.innerHTML='<tr><td class="px-3 py-2 text-sm text-gray-500">当前类型未配置表格</td></tr>';
+    const pager=document.getElementById('ledgerTypePager');
+    if(pager) pager.innerHTML='';
+    return;
+  }
   // table head
   thead.innerHTML=`<tr class="bg-gray-100">${schema.columns.map(c=>`<th class="text-left px-3 py-2">${c.title}</th>`).join('')}<th class="text-center px-3 py-2">选择</th></tr>`;
   const used=new Set(scheme.ledgerItems.map(l=>l.name));
   // filtering
   const filters=filterState[currentLedgerPickType]||{};
-  let rows=(ledgerData[currentLedgerPickType]||[]).filter(x=>{
+  const sourceList=(ledgerData[currentLedgerPickType]||[]);
+  let rows=sourceList.filter(x=>{
     return Object.entries(filters).every(([k,v])=>{
       if(!v) return true;
       const val=(x[k]??'')+'';
@@ -488,6 +661,9 @@ function renderLedgerTypeTable(){
       return val.toLowerCase().includes((v+'').toLowerCase());
     });
   });
+  if(!rows.length){
+    tbody.innerHTML=`<tr><td class="px-3 py-2 text-sm text-gray-500" colspan="${schema.columns.length+1}">暂无数据</td></tr>`;
+  }
   // pagination
   const total=rows.length;
   const totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
@@ -519,23 +695,61 @@ function renderLedgerTypeTable(){
     pager.querySelectorAll('button[data-page]').forEach(b=>{b.onclick=()=>{pagerState[currentLedgerPickType]=parseInt(b.getAttribute('data-page'),10)||1; renderLedgerTypeTable();};});
   }
 }
+// 门店营收模式显示控制：隐藏筛选与表格，仅提示按选定门店创建
+function setLedgerPickerViewByType(){
+  const filters=document.getElementById('ledgerTypeFilters');
+  const table=document.querySelector('#ledgerPickerModal table');
+  const pager=document.getElementById('ledgerTypePager');
+  const btnAll=document.getElementById('ledgerPickerSelectAll');
+  const btnClear=document.getElementById('ledgerPickerClear');
+  if(currentLedgerPickType==='store'){
+    const stores=(scheme.selectedStores||[]);
+    const chips=stores.map(s=>`<span class="inline-flex items-center px-2 py-1 bg-gray-100 text-xs text-gray-700 rounded">${(s.name||'')}-门店营收</span>`).join(' ');
+    const hint=stores.length?`已选门店：${stores.length} 个`:'未指定门店，请先在“账目设置”中选择门店';
+    if(filters) filters.innerHTML = `<div class="text-sm text-gray-700 mb-2">${hint}</div><div class="flex flex-wrap gap-2">${chips||''}</div>`;
+    if(table) table.style.display='none';
+    if(pager) pager.style.display='none';
+    if(btnAll) btnAll.style.display='none';
+    if(btnClear) btnClear.style.display='none';
+  }else{
+    if(table) table.style.display='';
+    if(pager) pager.style.display='';
+    if(btnAll) btnAll.style.display='';
+    if(btnClear) btnClear.style.display='';
+  }
+}
 function openLedgerPicker(){
   const modal=document.getElementById('ledgerPickerModal');
   document.querySelectorAll('.ledger-type-radio').forEach(r=>{
     r.checked = r.value===currentLedgerPickType;
-    r.onchange=()=>{currentLedgerPickType=r.value; filterState[currentLedgerPickType]={}; pagerState[currentLedgerPickType]=1; renderLedgerTypeFilters(); renderLedgerTypeTable();};
+    r.onchange=()=>{
+      currentLedgerPickType=r.value;
+      filterState[currentLedgerPickType]={};
+      pagerState[currentLedgerPickType]=1;
+      renderLedgerTypeFilters();
+      renderLedgerTypeTable();
+      setLedgerPickerViewByType();
+    };
   });
   renderLedgerTypeFilters();
   pagerState[currentLedgerPickType]=1;
   renderLedgerTypeTable();
+  setLedgerPickerViewByType();
   modal.classList.remove('hidden');
 }
 function closeLedgerPicker(){document.getElementById('ledgerPickerModal').classList.add('hidden');}
 function commitAddLedgers(){
   const tbody=document.getElementById('ledgerTypeTableBody');
   if(!tbody){closeLedgerPicker();return;}
-  const checks=tbody.querySelectorAll('input.ledger-type-pick:checked');
-  const names=[...checks].map(c=>c.value);
+  let names=[];
+  if(currentLedgerPickType==='store'){
+    const stores=(scheme.selectedStores||[]);
+    if(!stores.length){ alert('请先在“账目设置”中指定门店'); return; }
+    names = stores.map(s=>`${s.name}-门店营收`);
+  }else{
+    const checks=tbody.querySelectorAll('input.ledger-type-pick:checked');
+    names=[...checks].map(c=>c.value);
+  }
   if(!names.length){closeLedgerPicker();return;}
   names.forEach(n=>addLedger(n));
   renderLedgerTable();
@@ -590,27 +804,6 @@ function renderLedgerTable(){
     <tr data-id="${l.id}" class="border-t">
       <td class="px-3 py-2 text-center"><input type="checkbox" class="ledger-select" data-id="${l.id}"></td>
       <td class="px-3 py-2">${l.name}${scheme.currentLedgerId===l.id?'<span class="ml-2 text-xs text-blue-600">[当前]</span>':''}</td>
-      <td class="px-3 py-2">
-        <select class="border rounded px-2 py-1 ledger-type">
-          <option value="regular" ${l.ledgerType==='regular'?'selected':''}>定期账目</option>
-          <option value="current" ${l.ledgerType==='current'?'selected':''}>活期账目</option>
-        </select>
-      </td>
-      <td class="px-3 py-2 rev-time-cell">
-        <div class="flex items-center gap-2 rev-time-content" ${l.ledgerType==='current'?'style="display:none"':''}>
-          <div class="flex items-center gap-1">
-            <select class="border rounded px-1 py-1 rev-start-y">${optionsHTML(yearOpts(defY-5,defY+5), l.revenueStart.y)}</select>
-            <select class="border rounded px-1 py-1 rev-start-m">${optionsHTML(monthOpts, l.revenueStart.m)}</select>
-            <select class="border rounded px-1 py-1 rev-start-d">${optionsHTML(dayOpts, l.revenueStart.d)}</select>
-          </div>
-          <span>至</span>
-          <div class="flex items-center gap-1">
-            <select class="border rounded px-1 py-1 rev-end-y">${optionsHTML(yearOpts(defY-5,defY+5), l.revenueEnd.y)}</select>
-            <select class="border rounded px-1 py-1 rev-end-m">${optionsHTML(monthOpts, l.revenueEnd.m)}</select>
-            <select class="border rounded px-1 py-1 rev-end-d">${optionsHTML(dayOpts, l.revenueEnd.d)}</select>
-          </div>
-        </div>
-      </td>
       <td class="px-3 py-2">
         ${Array.isArray(l.terminals)&&l.terminals.length
           ? (()=>{const full=l.terminals.join('、');return `<span class=\"truncate inline-block align-middle max-w-xs\" title=\"${full}\">${full}</span>`;})()
@@ -778,39 +971,42 @@ function nodeCard(node){
   const allocWrap=document.createElement('div');
   allocWrap.className='space-y-2';
 
-  function renderAllocRows(){
-    allocWrap.innerHTML='';
-    if(!Array.isArray(node.allocs) || node.allocs.length===0){ node.allocs=[{type:'percent',value:0,priority:1}]; }
-    node.allocs.forEach((a,idx)=>{
-      const row=document.createElement('div'); row.className='grid grid-cols-12 gap-2';
-      // 类型
-      const col1=document.createElement('div'); col1.className='col-span-3';
-      const type=document.createElement('select'); type.className='w-full border rounded px-2 py-1';
-      type.innerHTML='<option value="percent">百分比</option><option value="amount">定额</option>';
-      type.value=a.type;
-      // 值
-      const col2=document.createElement('div'); col2.className='col-span-4';
-      const val=document.createElement('input'); val.type='number'; val.step='0.01'; val.min='0'; val.className='w-full border rounded px-2 py-1';
-      val.placeholder=a.type==='percent'?'比例%':'金额¥'; val.value=a.value;
-  type.onchange=()=>{ a.type=type.value; val.placeholder=a.type==='percent'?'比例%':'金额¥'; validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
-      col1.appendChild(type);
-  val.oninput=()=>{ a.value=parseFloat(val.value||0); validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
-      col2.appendChild(val);
-      // 优先级
-      const col3=document.createElement('div'); col3.className='col-span-3';
-      const pri=document.createElement('input'); pri.type='number'; pri.step='1'; pri.min='1'; pri.className='w-full border rounded px-2 py-1';
-  pri.value=a.priority; pri.oninput=()=>{ a.priority=parseInt(pri.value||1); validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
-      col3.appendChild(pri);
-      // 删除该额度
-      const col4=document.createElement('div'); col4.className='col-span-2 ops flex items-center justify-end space-x-1';
-      const bRemove=document.createElement('button'); bRemove.className='text-red-600'; bRemove.innerHTML='<i class="fas fa-trash"></i>'; bRemove.title='删除该额度';
-      bRemove.onclick=()=>{ if(node.allocs.length>1){ node.allocs.splice(idx,1); renderAllocRows(); validate(); } };
-      col4.appendChild(bRemove);
+function renderAllocRows(){
+  allocWrap.innerHTML='';
+  if(!Array.isArray(node.allocs) || node.allocs.length===0){ node.allocs=[{type:'percent',value:0,priority:1}]; }
+  node.allocs.forEach((a,idx)=>{
+    const row=document.createElement('div'); row.className='grid grid-cols-12 gap-2';
+    // 类型
+    const col1=document.createElement('div'); col1.className='col-span-3';
+    const lab1=document.createElement('div'); lab1.className='text-xs text-gray-700 mb-1'; lab1.textContent='分配规则';
+    const type=document.createElement('select'); type.className='w-full border rounded px-2 py-1';
+    type.innerHTML='<option value="percent">百分比</option><option value="amount">定额</option>';
+    type.value=a.type;
+    // 值
+    const col2=document.createElement('div'); col2.className='col-span-4';
+    const lab2=document.createElement('div'); lab2.className='text-xs text-gray-700 mb-1'; lab2.textContent='额度';
+    const val=document.createElement('input'); val.type='number'; val.step='0.01'; val.min='0'; val.className='w-full border rounded px-2 py-1';
+    val.placeholder=a.type==='percent'?'比例%':'金额¥'; val.value=a.value;
+    type.onchange=()=>{ a.type=type.value; val.placeholder=a.type==='percent'?'比例%':'金额¥'; validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+    col1.appendChild(lab1); col1.appendChild(type);
+    val.oninput=()=>{ a.value=parseFloat(val.value||0); validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+    col2.appendChild(lab2); col2.appendChild(val);
+    // 优先级
+    const col3=document.createElement('div'); col3.className='col-span-3';
+    const lab3=document.createElement('div'); lab3.className='text-xs text-gray-700 mb-1'; lab3.textContent='优先级';
+    const pri=document.createElement('input'); pri.type='number'; pri.step='1'; pri.min='1'; pri.className='w-full border rounded px-2 py-1';
+    pri.value=a.priority; pri.oninput=()=>{ a.priority=parseInt(pri.value||1); validate(); if(!previewEl?.classList.contains('hidden')){ requestAnimationFrame(()=>drawMindmapLinks()); } };
+    col3.appendChild(lab3); col3.appendChild(pri);
+    // 删除该额度
+    const col4=document.createElement('div'); col4.className='col-span-2 ops flex items-center justify-end space-x-1';
+    const bRemove=document.createElement('button'); bRemove.className='text-red-600'; bRemove.innerHTML='<i class="fas fa-trash"></i>'; bRemove.title='删除该额度';
+    bRemove.onclick=()=>{ if(node.allocs.length>1){ node.allocs.splice(idx,1); renderAllocRows(); validate(); } };
+    col4.appendChild(bRemove);
 
-      row.appendChild(col1); row.appendChild(col2); row.appendChild(col3); row.appendChild(col4);
-      allocWrap.appendChild(row);
-    });
-  }
+    row.appendChild(col1); row.appendChild(col2); row.appendChild(col3); row.appendChild(col4);
+    allocWrap.appendChild(row);
+  });
+}
   renderAllocRows();
 
   // 添加额度按钮
@@ -828,9 +1024,9 @@ function nodeCard(node){
   // 节点操作
   const ops=document.createElement('div');
   ops.className='flex items-center justify-end space-x-2 mt-2';
-  const bSibling=document.createElement('button'); bSibling.className='text-blue-600'; bSibling.innerHTML='<i class="fas fa-sitemap"></i>'; bSibling.title='添加同级'; bSibling.onclick=()=>openAccountPicker(node.parentId);
-  const bAdd=document.createElement('button'); bAdd.className='text-blue-600'; bAdd.innerHTML='<i class="fas fa-plus"></i>'; bAdd.title='添加子节点'; bAdd.onclick=()=>openAccountPicker(node.id);
-  const bDel=document.createElement('button'); bDel.className='text-red-600'; bDel.innerHTML='<i class="fas fa-trash"></i>'; bDel.title='删除节点'; bDel.onclick=()=>removeNode(node.id);
+  const bSibling=document.createElement('button'); bSibling.className='inline-flex items-center text-blue-600'; bSibling.innerHTML='<i class="fas fa-sitemap mr-1"></i>添加同级'; bSibling.title='添加同级'; bSibling.onclick=()=>openAccountPicker(node.parentId);
+  const bAdd=document.createElement('button'); bAdd.className='inline-flex items-center text-blue-600'; bAdd.innerHTML='<i class="fas fa-plus mr-1"></i>添加子级'; bAdd.title='添加子级'; bAdd.onclick=()=>openAccountPicker(node.id);
+  const bDel=document.createElement('button'); bDel.className='inline-flex items-center text-red-600'; bDel.innerHTML='<i class="fas fa-trash mr-1"></i>删除'; bDel.title='删除'; bDel.onclick=()=>removeNode(node.id);
   const bCol=document.createElement('button'); bCol.className='text-gray-600'; bCol.innerHTML=node.collapsed?'<i class="fas fa-chevron-right"></i>':'<i class="fas fa-chevron-down"></i>'; bCol.title='折叠/展开'; bCol.onclick=()=>{ node.collapsed=!node.collapsed; render(); };
   ops.appendChild(bSibling); ops.appendChild(bAdd); ops.appendChild(bDel); ops.appendChild(bCol);
 
@@ -900,7 +1096,17 @@ function render(){els.root.innerHTML='';scheme.roots.forEach(id=>els.root.append
     }
   });
 
-  els.issues.innerHTML=issues.length?issues.map(i=>'<li>'+i+'</li>').join(''):'<li>未发现问题</li>';
+if(issues.length){
+  els.issues.innerHTML=issues.map(i=>'<li>'+i+'</li>').join('');
+}else{
+  els.issues.innerHTML='<li class="text-green-600"><i class="fas fa-check-circle mr-1"></i>通过校验</li>';
+}
+const ib=els.issues?els.issues.parentElement:null;
+if(ib){
+  ib.classList.remove('bg-yellow-50','border-yellow-200','bg-green-50','border-green-200');
+  if(issues.length){ ib.classList.add('bg-yellow-50','border-yellow-200'); }
+  else { ib.classList.add('bg-green-50','border-green-200'); }
+}
 
   // 汇总展示
   const lines=[];
@@ -938,7 +1144,7 @@ if(els.btnReset){els.btnReset.onclick=()=>{
   render();
   validate();
 };}
-['渠道-抖音','门店-杭州西湖','平台-服务费'].forEach((n,i)=>{const id=addNode(n,null);if(i===2){reparent(id,scheme.roots[0]);}});render();validate();
+['宝点数字体验店-店长','星力展厅店-店长','平台-服务费'].forEach((n,i)=>{const id=addNode(n,null);if(i===2){reparent(id,scheme.roots[0]);}});render();validate();
 const tabEdit=document.getElementById('tabEdit');
 const tabPreview=document.getElementById('tabPreview');
 const editorView=document.getElementById('editorView');
@@ -956,7 +1162,7 @@ function previewBranchHTML(id){
 }
 function renderPreview(){
   const curLedger=scheme.ledgerItems.find(l=>l.id===scheme.currentLedgerId);
-  const central=scheme.name?scheme.name:'未命名方案';
+  const central=scheme.name?scheme.name:'机台营收方案';
   const ledgerBadge = curLedger
     ? `<div class="bg-blue-600 text-white rounded-xl px-5 py-2 text-sm">账目：${curLedger.name} · 总额：¥ ${curLedger.total} · 保证金：¥ ${(curLedger.deposit||0)} · 可用：¥ ${(curLedger.total - (curLedger.deposit||0)).toFixed(2)}</div>`
     : `<div class="bg-gray-200 text-gray-700 rounded-xl px-5 py-2 text-sm">未选择当前账目</div>`;
@@ -1132,7 +1338,7 @@ function saveSchemeToLocal(){
     try{ list = JSON.parse(localStorage.getItem('allocation_projects')||'[]')||[]; }catch(e){ list = []; }
     list.push({
       id: projectId,
-      name: scheme.name || '未命名方案',
+      name: scheme.name || '机台营收方案',
       creator: '当前用户',
       created: stamp,
       status: '项目待审核',
@@ -1350,7 +1556,7 @@ function disableEditing() {
 
 function renderPreview(){
   const curLedger=scheme.ledgerItems.find(l=>l.id===scheme.currentLedgerId);
-  const central=scheme.name?scheme.name:'未命名方案';
+  const central=scheme.name?scheme.name:'机台营收方案';
   const ledgerBadge = curLedger
     ? `<div class="bg-blue-600 text-white rounded-xl px-5 py-2 text-sm">账目：${curLedger.name} · 总额：¥ ${curLedger.total} · 保证金：¥ ${(curLedger.deposit||0)} · 可用：¥ ${(curLedger.total - (curLedger.deposit||0)).toFixed(2)}</div>`
     : `<div class="bg-gray-200 text-gray-700 rounded-xl px-5 py-2 text-sm">未选择当前账目</div>`;

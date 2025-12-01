@@ -14,9 +14,11 @@
     </div>
 
     <div class="bg-gray-50 p-4 rounded-lg mb-4">
-      <label class="text-sm text-gray-500">项目名称</label>
-      <div class="mt-1 flex items-center gap-2">
-        <input id="filterName" type="text" placeholder="输入项目名称" class="flex-1 border rounded px-3 py-2" />
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="inline-flex items-center border rounded-lg overflow-hidden">
+          <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">项目名称</span>
+          <input id="filterName" type="text" placeholder="输入项目名称" class="px-3 py-2 text-sm focus:outline-none" />
+        </div>
         <button id="filterClear" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded">清空</button>
       </div>
     </div>
@@ -76,10 +78,10 @@
 
   <script>
     let projects=[
-      {id:"PRJ-001",name:"十月渠道分账方案",creator:"张三",created:"2025-11-01 10:00"},
-      {id:"PRJ-002",name:"十一月门店分账",creator:"李四",created:"2025-11-05 09:30"},
-      {id:"PRJ-003",name:"平台服务费分账",creator:"王五",created:"2025-11-10 14:20"},
-      {id:"PRJ-004",name:"渠道联合分账",creator:"赵六",created:"2025-11-12 16:05"}
+      {id:"PRJ-001",name:"星力展厅店机台营收",creator:"张三",created:"2025-11-01 10:00"},
+      {id:"PRJ-002",name:"春节营销活动激励",creator:"李四",created:"2025-11-05 09:30"},
+      {id:"PRJ-003",name:"太鼓达人利润分成",creator:"王五",created:"2025-11-10 14:20"},
+      {id:"PRJ-004",name:"翠花展厅店抖音渠道营收",creator:"赵六",created:"2025-11-12 16:05"}
     ];
     try{
       const local = JSON.parse(localStorage.getItem('allocation_projects')||'[]')||[];

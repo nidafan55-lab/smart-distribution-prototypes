@@ -180,10 +180,10 @@
 
     <!-- 筛选器 -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">项目状态</label>
-          <select class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <div class="flex flex-wrap gap-3 items-center">
+        <div class="inline-flex items-center border rounded-lg overflow-hidden">
+          <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">项目状态</span>
+          <select class="px-3 py-2 text-sm focus:outline-none">
             <option value="">全部</option>
             <option value="pending">待审核</option>
             <option value="approved">已审核</option>
@@ -191,16 +191,18 @@
             <option value="error">异常</option>
           </select>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">创建时间</label>
-          <input type="date" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <div class="inline-flex items-center border rounded-lg overflow-hidden">
+          <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">创建时间</span>
+          <input type="date" class="px-2 py-2 text-sm focus:outline-none" />
+          <span class="px-2 text-gray-400">-</span>
+          <input type="date" class="px-2 py-2 text-sm focus:outline-none border-l" />
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">项目名称</label>
-          <input type="text" placeholder="请输入项目名称" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <div class="inline-flex items-center border rounded-lg overflow-hidden">
+          <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">项目名称</span>
+          <input type="text" placeholder="请输入项目名称" class="px-3 py-2 text-sm focus:outline-none" />
         </div>
-        <div class="flex items-end">
-          <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm mr-2">
+        <div class="inline-flex items-center gap-2 ml-auto">
+          <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm">
             <i class="fas fa-search mr-1"></i>查询
           </button>
           <button class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md shadow-sm">
@@ -326,7 +328,7 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <p class="text-sm text-gray-500">项目名称</p>
-                <p class="text-sm">2023年Q3营销活动分账</p>
+                <p class="text-sm">星力展厅店机台营收</p>
               </div>
               <div>
                 <p class="text-sm text-gray-500">创建时间</p>
@@ -334,7 +336,7 @@
               </div>
               <div>
                 <p class="text-sm text-gray-500">创建人</p>
-                <p class="text-sm">张三</p>
+                <p class="text-sm">王总</p>
               </div>
               <div>
                 <p class="text-sm text-gray-500">状态</p>
@@ -376,10 +378,10 @@
             <h3 class="font-medium mb-2">分账树状预览图</h3>
             <div class="border border-gray-300 rounded-md p-4 bg-white">
               <div class="mindmap-container">
-                <div class="mindmap-central-node">未命名方案</div>
+                <div class="mindmap-central-node">机台营收方案</div>
                 <div class="mindmap-branches">
                   <div class="mindmap-branch">
-                    <div class="mindmap-node">渠道-抖音 · P1:0%</div>
+                    <div class="mindmap-node">宝点数字体验店-店长 · P1:0%</div>
                     <div class="mindmap-children">
                       <div class="mindmap-branch">
                         <div class="mindmap-node">平台-服务费 · P1:0%</div>
@@ -387,7 +389,7 @@
                     </div>
                   </div>
                   <div class="mindmap-branch">
-                    <div class="mindmap-node">门店-杭州西湖 · P1:0%</div>
+                    <div class="mindmap-node">星力展厅店-店长 · P1:0%</div>
                   </div>
                 </div>
                 <div class="mindmap-links">
@@ -409,7 +411,7 @@
             <div class="border border-gray-300 rounded-md p-3 flex items-center justify-between">
               <div class="flex items-center">
                 <i class="far fa-file-pdf text-red-500 text-xl mr-2"></i>
-                <span>营销活动分账协议.pdf</span>
+                <span>机台营收分账协议.pdf</span>
               </div>
               <button class="text-blue-600 hover:text-blue-800">
                 <i class="fas fa-download mr-1"></i>下载
@@ -460,7 +462,7 @@
           <div class="border rounded-lg p-6 mb-4">
             <div class="flex justify-between items-center mb-3">
               <div>
-                <p class="font-medium">渠道-抖音</p>
+                <p class="font-medium">宝点数字体验店-店长</p>
                 <p class="text-sm text-gray-500 mt-1">上传时间: 2023-10-18 15:30:25</p>
               </div>
               <div class="flex items-center">
@@ -481,7 +483,7 @@
           <div class="border rounded-lg p-6 mb-4">
             <div class="flex justify-between items-center mb-3">
               <div>
-                <p class="font-medium">门店-杭州西湖</p>
+                <p class="font-medium">星力展厅店-店长</p>
                 <p class="text-sm text-gray-500 mt-1">上传时间: 2023-10-17 09:45:12</p>
               </div>
               <div class="flex items-center">
@@ -648,7 +650,7 @@
             </div>
           </div>
           <div class="my-4">
-            <p class="mb-4">确认审核通过"2023年Q3营销活动分账"项目吗？</p>
+            <p class="mb-4">确认审核通过"星力展厅店机台营收"项目吗？</p>
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">审核意见</label>
               <textarea class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="请输入审核意见（选填）"></textarea>
@@ -667,17 +669,17 @@
   <script>
     // 示例项目数据
     const projectData = [
-      { id: 1, name: "分账项目", creator: "用户", createTime: "2023-10-15 10:30:25", status: "pending" },
-      { id: 2, name: "2023年Q3营销活动分账", creator: "张三", createTime: "2023-07-15 14:30:25", status: "approved" },
-      { id: 3, name: "电商平台佣金分账", creator: "李四", createTime: "2023-07-20 09:15:42", status: "pending" },
-      { id: 4, name: "新产品上市推广费用分账", creator: "王五", createTime: "2023-07-22 16:45:10", status: "completed" },
-      { id: 5, name: "年度合作伙伴分润", creator: "赵六", createTime: "2023-07-25 11:20:35", status: "error" },
-      { id: 6, name: "跨部门协作项目分账", creator: "张三", createTime: "2023-07-28 15:10:18", status: "pending" },
-      { id: 7, name: "线下活动费用分账", creator: "李四", createTime: "2023-08-01 10:05:30", status: "completed" },
-      { id: 8, name: "渠道销售佣金分账", creator: "王五", createTime: "2023-08-03 14:25:45", status: "completed" },
-      { id: 9, name: "技术服务费分账", creator: "赵六", createTime: "2023-08-05 09:30:22", status: "pending" },
-      { id: 10, name: "内容创作者分润", creator: "张三", createTime: "2023-08-08 16:40:15", status: "approved" },
-      { id: 11, name: "季度销售提成分账", creator: "李四", createTime: "2023-08-10 11:55:38", status: "completed" }
+      { id: 1,  name: "星力展厅店机台营收",           creator: "用户", createTime: "2023-10-15 10:30:25", status: "pending" },
+      { id: 2,  name: "全门店通用10次票营收",         creator: "张三", createTime: "2023-07-15 14:30:25", status: "approved" },
+      { id: 3,  name: "华东地区太鼓达人利润",         creator: "李四", createTime: "2023-07-20 09:15:42", status: "pending" },
+      { id: 4,  name: "宝点数字体验店小程序营收",     creator: "王五", createTime: "2023-07-22 16:45:10", status: "completed" },
+      { id: 5,  name: "星力展厅店机台营收",           creator: "赵六", createTime: "2023-07-25 11:20:35", status: "error" },
+      { id: 6,  name: "全门店通用10次票营收",         creator: "张三", createTime: "2023-07-28 15:10:18", status: "pending" },
+      { id: 7,  name: "华东地区太鼓达人利润",         creator: "李四", createTime: "2023-08-01 10:05:30", status: "completed" },
+      { id: 8,  name: "宝点数字体验店小程序营收",     creator: "王五", createTime: "2023-08-03 14:25:45", status: "completed" },
+      { id: 9,  name: "星力展厅店机台营收",           creator: "赵六", createTime: "2023-08-05 09:30:22", status: "pending" },
+      { id: 10, name: "全门店通用10次票营收",         creator: "张三", createTime: "2023-08-08 16:40:15", status: "approved" },
+      { id: 11, name: "华东地区太鼓达人利润",         creator: "李四", createTime: "2023-08-10 11:55:38", status: "completed" }
     ];
 
     // 状态对应的样式和文本
@@ -861,8 +863,8 @@
     // 打开账号审核抽屉并填充数据
     function openAccountAuditDrawer(project) {
       const accounts = [
-        { name: '渠道-抖音', required: 10000, paid: 9000 },
-        { name: '门店-杭州西湖', required: 8000, paid: 8000 },
+        { name: '宝点数字体验店-店长', required: 10000, paid: 9000 },
+        { name: '星力展厅店-店长', required: 8000, paid: 8000 },
         { name: '平台-服务费', required: 5000, paid: 3000 },
       ];
       const tbody = document.getElementById('accountAuditTableBody');

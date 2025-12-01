@@ -16,32 +16,29 @@
       </div>
     </div>
     <div class="bg-gray-50 p-4 rounded-lg mb-6 text-left">
-      <div class="flex items-center gap-4 flex-wrap">
-        <div class="w-full md:w-auto">
-          <label class="text-sm text-gray-500">账目筛选</label>
-          <select id="filterLedger" class="mt-1 w-full md:w-60 border rounded px-3 py-2">
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="inline-flex items-center border rounded-lg overflow-hidden">
+          <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">账目筛选</span>
+          <select id="filterLedger" class="px-3 py-2 text-sm focus:outline-none">
             <option value="all">全部账目</option>
             <option value="商品收入">商品收入</option>
             <option value="退款">退款</option>
             <option value="服务费">服务费</option>
           </select>
         </div>
-        <div class="w-full md:w-auto">
-          <label class="text-sm text-gray-500">时间维度</label>
-          <div class="mt-1 inline-flex rounded-lg border overflow-hidden">
+        <div class="inline-flex items-center border rounded-lg overflow-hidden">
+          <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">时间维度</span>
+          <div class="flex items-center">
             <button id="timeBtnYear" class="px-3 py-2 bg-white">年度</button>
             <button id="timeBtnMonth" class="px-3 py-2 bg-white">月度</button>
             <button id="timeBtnCustom" class="px-3 py-2 bg-white">自选时间</button>
           </div>
         </div>
-        <div class="w-full md:w-auto">
-          <div id="customTimeInputs" class="hidden flex items-center gap-2">
-            <label class="text-sm text-gray-500">起止日期</label>
-            <div class="mt-0 flex gap-2">
-              <input id="dateStart" type="date" class="flex-1 border rounded px-2 py-2" />
-              <input id="dateEnd" type="date" class="flex-1 border rounded px-2 py-2" />
-            </div>
-          </div>
+        <div id="customTimeInputs" class="hidden inline-flex items-center border rounded-lg overflow-hidden">
+          <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">起止日期</span>
+          <input id="dateStart" type="date" class="px-2 py-2 text-sm focus:outline-none" />
+          <span class="px-2 text-gray-400">-</span>
+          <input id="dateEnd" type="date" class="px-2 py-2 text-sm focus:outline-none border-l" />
         </div>
       </div>
     </div>
@@ -84,9 +81,9 @@
         { name: '服务费', amount: 200 }
       ];
       const accountAllData = [
-        { name: '门店-杭州西湖', amount: 328.6 },
-        { name: '渠道-抖音', amount: 256.3 },
-        { name: '门店-深圳南山', amount: 198.4 },
+        { name: '星力展厅店-店长', amount: 328.6 },
+        { name: '宝点数字体验店-店长', amount: 256.3 },
+        { name: '宝点数字体验店-店长', amount: 198.4 },
         { name: '平台-服务费', amount: 122.1 }
       ];
 
@@ -123,7 +120,7 @@
         const filtered = v==='all'?ledgerAllData:ledgerAllData.filter(x=>x.name===v);
         renderBars('ledgerCompareBars', filtered);
         const accountFiltered = (v==='all') ? accountAllData : accountAllData.filter(x=>{
-          if(v==='商品收入') return x.name==='门店-杭州西湖'||x.name==='渠道-抖音'||x.name==='门店-深圳南山';
+          if(v==='商品收入') return x.name==='星力展厅店-店长'||x.name==='宝点数字体验店-店长';
           if(v==='服务费') return x.name==='平台-服务费';
           if(v==='退款') return false;
           return false;
