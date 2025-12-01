@@ -74,6 +74,23 @@
               </select>
             </div>
           </div>
+          <div class="text-sm font-medium text-gray-700">结算设置</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div id="simpleCurrentSettlementWrap">
+              <div class="flex items-center gap-3">
+                <span class="text-sm text-gray-900 font-medium whitespace-nowrap">结算方式</span>
+                <select id="simpleCurrentSettlementType" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none"></select>
+              </div>
+              <div id="simpleCurrentSettlementFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3"></div>
+            </div>
+            <div id="simpleFixedSettlementWrap">
+              <div class="flex items-center gap-3">
+                <span class="text-sm text-gray-900 font-medium whitespace-nowrap">结算方式</span>
+                <select id="simpleFixedSettlementType" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none"></select>
+              </div>
+              <div id="simpleFixedSettlementFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3"></div>
+            </div>
+          </div>
         </div>
         <div id="advancedRuleSection">
         <div class="text-sm font-medium text-gray-700">基础信息</div>
@@ -256,7 +273,15 @@
         const sv = pt ? pt.value : 'current';
         const wrap = document.getElementById('simpleExpireWrap');
         if (wrap){ if (sv==='fixed'){ wrap.classList.add('hidden'); } else { wrap.classList.remove('hidden'); } }
-        if (pt){ pt.onchange = (e)=>{ const v=e.target.value; const w=document.getElementById('simpleExpireWrap'); if (w){ if (v==='fixed'){ w.classList.add('hidden'); const et=document.getElementById('simpleExpireTime'); if (et) et.value=''; } else { w.classList.remove('hidden'); } } }; }
+        const toggleSettle=(t)=>{ const cw=document.getElementById('simpleCurrentSettlementWrap'); const fw=document.getElementById('simpleFixedSettlementWrap'); if(cw&&fw){ if(t==='fixed'){ cw.classList.add('hidden'); fw.classList.remove('hidden'); } else { fw.classList.add('hidden'); cw.classList.remove('hidden'); } } };
+        toggleSettle(sv);
+        if (pt){ pt.onchange = (e)=>{ const v=e.target.value; const w=document.getElementById('simpleExpireWrap'); if (w){ if (v==='fixed'){ w.classList.add('hidden'); const et=document.getElementById('simpleExpireTime'); if (et) et.value=''; } else { w.classList.remove('hidden'); } } toggleSettle(v); }; }
+        updateSimpleCurrentSettlementOptions();
+        updateSimpleFixedSettlementOptions();
+        const scSel=document.getElementById('simpleCurrentSettlementType');
+        const sfSel=document.getElementById('simpleFixedSettlementType');
+        if (scSel) scSel.onchange=(e)=>renderSimpleCurrentSettlementFields(e.target.value, null);
+        if (sfSel) sfSel.onchange=(e)=>renderSimpleFixedSettlementFields(e.target.value, null);
         return;
       }
 
@@ -304,6 +329,22 @@
       [{v:'order',t:'按订单结算'}, {v:'month',t:'按月结算'}, {v:'revenue_end',t:'营收时间结束后统一结算'}].forEach(o=>{
         const opt = document.createElement('option'); opt.value=o.v; opt.textContent=o.t; sel.appendChild(opt);
       });
+    }
+    function updateSimpleCurrentSettlementOptions(){
+      const sel = document.getElementById('simpleCurrentSettlementType');
+      if (!sel) return; sel.innerHTML = '';
+      [{v:'order',t:'按订单结算'}, {v:'month',t:'按月结算'}, {v:'year',t:'按年结算'}].forEach(o=>{
+        const opt = document.createElement('option'); opt.value=o.v; opt.textContent=o.t; sel.appendChild(opt);
+      });
+      const tp = 'order'; sel.value = tp; renderSimpleCurrentSettlementFields(tp, null);
+    }
+    function updateSimpleFixedSettlementOptions(){
+      const sel = document.getElementById('simpleFixedSettlementType');
+      if (!sel) return; sel.innerHTML = '';
+      [{v:'order',t:'按订单结算'}, {v:'month',t:'按月结算'}, {v:'revenue_end',t:'营收时间结束后统一结算'}].forEach(o=>{
+        const opt = document.createElement('option'); opt.value=o.v; opt.textContent=o.t; sel.appendChild(opt);
+      });
+      const tp = 'revenue_end'; sel.value = tp; renderSimpleFixedSettlementFields(tp, null);
     }
 
     function renderCurrentSettlementFields(selectedType, existing){
@@ -366,6 +407,32 @@
       }
       container.innerHTML = fields.join('');
     }
+    function renderSimpleCurrentSettlementFields(selectedType, existing){
+      const container = document.getElementById('simpleCurrentSettlementFields');
+      if (!container) return; container.innerHTML='';
+      const fields = [];
+      if (selectedType === 'order'){
+        fields.push(`<div><label class="label">每笔订单结束后（天）</label><input id="simple_current_orderDays" type="number" min="0" class="input" placeholder="如 7" value="${existing?.orderDays ?? ''}" /></div>`);
+      } else if (selectedType === 'month'){
+        fields.push(`<div><label class="label">每月结算日（号）</label><input id="simple_current_monthDay" type="number" min="1" max="31" class="input" placeholder="如 25" value="${existing?.monthDay ?? ''}" /></div>`);
+      } else if (selectedType === 'year'){
+        fields.push(`<div><label class="label">每年结算（月份）</label><input id="simple_current_yearMonth" type="number" min="1" max="12" class="input" placeholder="如 12" value="${existing?.yearMonth ?? ''}" /></div><div><label class="label">每年结算（日期）</label><input id="simple_current_yearDay" type="number" min="1" max="31" class="input" placeholder="如 31" value="${existing?.yearDay ?? ''}" /></div>`);
+      }
+      container.innerHTML = fields.join('');
+    }
+    function renderSimpleFixedSettlementFields(selectedType, existing){
+      const container = document.getElementById('simpleFixedSettlementFields');
+      if (!container) return; container.innerHTML='';
+      const fields = [];
+      if (selectedType === 'order'){
+        fields.push(`<div><label class="label">每笔订单结束后（天）</label><input id="simple_fixed_orderDays" type="number" min="0" class="input" placeholder="如 7" value="${existing?.orderDays ?? ''}" /></div>`);
+      } else if (selectedType === 'month'){
+        fields.push(`<div><label class="label">每月结算日（号）</label><input id="simple_fixed_monthDay" type="number" min="1" max="31" class="input" placeholder="如 25" value="${existing?.monthDay ?? ''}" /></div>`);
+      } else if (selectedType === 'revenue_end'){
+        fields.push(`<div><label class="label">营收结束后（天）结算</label><input id="simple_fixed_revenueEndDays" type="number" min="0" class="input" placeholder="如 15" value="${existing?.revenueEndDays ?? ''}" /></div>`);
+      }
+      container.innerHTML = fields.join('');
+    }
 
     function collectCurrentSettlement(selectedType){
       const s = { type: selectedType };
@@ -390,6 +457,29 @@
       }
       return s;
     }
+    function collectSimpleCurrentSettlement(selectedType){
+      const s = { type: selectedType };
+      if (selectedType === 'order'){
+        s.orderDays = parseInt(document.getElementById('simple_current_orderDays')?.value || '0', 10) || 0;
+      } else if (selectedType === 'month'){
+        s.monthDay = parseInt(document.getElementById('simple_current_monthDay')?.value || '1', 10) || 1;
+      } else if (selectedType === 'year'){
+        s.yearMonth = parseInt(document.getElementById('simple_current_yearMonth')?.value || '1', 10) || 1;
+        s.yearDay = parseInt(document.getElementById('simple_current_yearDay')?.value || '1', 10) || 1;
+      }
+      return s;
+    }
+    function collectSimpleFixedSettlement(selectedType){
+      const s = { type: selectedType };
+      if (selectedType === 'order'){
+        s.orderDays = parseInt(document.getElementById('simple_fixed_orderDays')?.value || '0', 10) || 0;
+      } else if (selectedType === 'month'){
+        s.monthDay = parseInt(document.getElementById('simple_fixed_monthDay')?.value || '1', 10) || 1;
+      } else if (selectedType === 'revenue_end'){
+        s.revenueEndDays = parseInt(document.getElementById('simple_fixed_revenueEndDays')?.value || '0', 10) || 0;
+      }
+      return s;
+    }
 
     // 保存表单
     function onSave(){
@@ -402,8 +492,12 @@
         let expireTime = document.getElementById('simpleExpireTime').value;
         if (projectType==='fixed'){ expireTime=''; }
         const ledgerScopeType = document.getElementById('simpleLedgerScopeType').value;
+        const simpleCurType = document.getElementById('simpleCurrentSettlementType').value;
+        const simpleFixType = document.getElementById('simpleFixedSettlementType').value;
+        const current = collectSimpleCurrentSettlement(simpleCurType);
+        const fixed = collectSimpleFixedSettlement(simpleFixType);
         if (!name){ alert('请填写规则名称'); return; }
-        const payload = { name, projectType, effectiveTime, expireTime, ledgerScopeType };
+        const payload = { name, projectType, effectiveTime, expireTime, ledgerScopeType, current, fixed };
         rules.push(payload);
         saveRules(); renderRules(); closeModal();
         return;

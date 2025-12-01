@@ -34,6 +34,7 @@ body.review-mode .bottom-action-buttons {
       <input id="schemeName" class="mt-1 w-full border rounded px-3 py-2" placeholder="例如：10月渠道分账方案">
     </div>
   </div>
+  
   <div class="text-sm font-medium text-gray-700 mb-2">项目规则</div>
   <div class="mb-2 flex items-center gap-4">
     <label class="inline-flex items-center"><input type="radio" name="ruleSource" id="ruleSourceNew" value="new" checked><span class="ml-2">新增规则</span></label>
@@ -72,6 +73,23 @@ body.review-mode .bottom-action-buttons {
         <span class="text-sm text-gray-900 font-medium whitespace-nowrap">失效时间</span>
         <input id="ruleCfgEnd" type="datetime-local" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none">
       </div>
+    </div>
+  </div>
+  <div class="text-sm font-medium text-gray-700 mb-2">结算设置</div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div id="projectCurrentSettlementWrap">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">结算方式</span>
+        <select id="projectCurrentSettlementType" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none"></select>
+      </div>
+      <div id="projectCurrentSettlementFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3"></div>
+    </div>
+    <div id="projectFixedSettlementWrap">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-900 font-medium whitespace-nowrap">结算方式</span>
+        <select id="projectFixedSettlementType" class="flex-1 h-10 w-full border border-gray-300 rounded px-3 focus:outline-none"></select>
+      </div>
+      <div id="projectFixedSettlementFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3"></div>
     </div>
   </div>
   <div class="text-sm font-medium text-gray-700 mb-2">账目设置</div>
@@ -276,7 +294,7 @@ body.review-mode .bottom-action-buttons {
     </div>
   </div>
 </div>
-<script>const scheme={name:'',rule:'',ruleName:'',accountType:'current',effectiveTime:'',expireTime:'',storeMode:'single',selectedStores:[],ledgerItems:[],currentLedgerId:null,nodes:{},roots:[]};let idSeq=1;const accountOptions=['账号一','账号二','账号三','账号四','账号五','星力展厅店-店长','宝点数字体验店-店长','宝点数字体验店-店长','星力展厅店-店长','平台-服务费','代理-华东大区'];
+<script>const scheme={name:'',rule:'',ruleName:'',accountType:'current',effectiveTime:'',expireTime:'',currentSettlement:{type:'order',orderDays:0},fixedSettlement:{type:'order',orderDays:0},storeMode:'single',selectedStores:[],ledgerItems:[],currentLedgerId:null,nodes:{},roots:[]};let idSeq=1;const accountOptions=['账号一','账号二','账号三','账号四','账号五','星力展厅店-店长','宝点数字体验店-店长','宝点数字体验店-店长','星力展厅店-店长','平台-服务费','代理-华东大区'];
 // 可选择的终端列表
 const terminalOptions=['小程序','收银台#000001','收银台#000002','pos机#000001','pos机#000002'];
 const ruleTemplates=[
@@ -287,15 +305,23 @@ const els={schemeName:document.getElementById('schemeName'),ruleCfgName:document
 els.schemeName.oninput=()=>scheme.name=els.schemeName.value;
 if(els.ruleCfgName){els.ruleCfgName.oninput=()=>scheme.ruleName=els.ruleCfgName.value;}
 function toggleEndByType(val){const c=document.getElementById('ruleCfgEndCont');if(val==='fixed'){c.classList.remove('hidden');}else{c.classList.add('hidden');}}
-if(els.ruleCfgType){els.ruleCfgType.onchange=()=>{scheme.accountType=els.ruleCfgType.value;toggleEndByType(scheme.accountType);};}
+if(els.ruleCfgType){els.ruleCfgType.onchange=()=>{scheme.accountType=els.ruleCfgType.value;toggleEndByType(scheme.accountType);toggleSettlementByProjectType(scheme.accountType);};}
 function setRuleFieldsDisabled(dis){['ruleCfgName','ruleCfgType','ruleCfgStart','ruleCfgEnd'].forEach(k=>{if(els[k]) els[k].disabled=!!dis;});}
 function populateRuleExistingOptions(){if(!els.ruleExistingSelect) return; els.ruleExistingSelect.innerHTML='<option value="">请选择</option>'+ruleTemplates.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');}
-function applyRuleTemplateById(id){const tpl=ruleTemplates.find(x=>x.id===id);if(!tpl) return; if(els.ruleCfgName) els.ruleCfgName.value=tpl.name; if(els.ruleCfgType) els.ruleCfgType.value=tpl.accountType; if(els.ruleCfgStart) els.ruleCfgStart.value=tpl.effectiveTime||''; if(els.ruleCfgEnd) els.ruleCfgEnd.value=tpl.expireTime||''; scheme.ruleName=tpl.name; scheme.accountType=tpl.accountType; scheme.effectiveTime=tpl.effectiveTime||''; scheme.expireTime=tpl.expireTime||''; toggleEndByType(scheme.accountType); setRuleFieldsDisabled(true);}
+function applyRuleTemplateById(id){const tpl=ruleTemplates.find(x=>x.id===id);if(!tpl) return; if(els.ruleCfgName) els.ruleCfgName.value=tpl.name; if(els.ruleCfgType) els.ruleCfgType.value=tpl.accountType; if(els.ruleCfgStart) els.ruleCfgStart.value=tpl.effectiveTime||''; if(els.ruleCfgEnd) els.ruleCfgEnd.value=tpl.expireTime||''; scheme.ruleName=tpl.name; scheme.accountType=tpl.accountType; scheme.effectiveTime=tpl.effectiveTime||''; scheme.expireTime=tpl.expireTime||''; toggleEndByType(scheme.accountType); toggleSettlementByProjectType(scheme.accountType); setRuleFieldsDisabled(true);} 
 function switchRuleSource(src){if(src==='existing'){ if(els.ruleExistingSelectCont) els.ruleExistingSelectCont.classList.remove('hidden'); setRuleFieldsDisabled(true); } else { if(els.ruleExistingSelectCont) els.ruleExistingSelectCont.classList.add('hidden'); setRuleFieldsDisabled(false); }}
 populateRuleExistingOptions();
 if(els.ruleSourceNew){els.ruleSourceNew.onchange=()=>switchRuleSource('new');}
 if(els.ruleSourceExisting){els.ruleSourceExisting.onchange=()=>switchRuleSource('existing');}
 if(els.ruleExistingSelect){els.ruleExistingSelect.onchange=()=>applyRuleTemplateById(els.ruleExistingSelect.value);} 
+function updateProjectCurrentSettlementOptions(){const sel=document.getElementById('projectCurrentSettlementType'); if(!sel) return; sel.innerHTML=''; [{v:'order',t:'按订单结算'},{v:'month',t:'按月结算'},{v:'year',t:'按年结算'}].forEach(o=>{const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; sel.appendChild(opt);}); const tp=scheme.currentSettlement?.type||'order'; sel.value=tp; renderProjectCurrentSettlementFields(tp, scheme.currentSettlement); sel.onchange=(e)=>{ renderProjectCurrentSettlementFields(e.target.value, scheme.currentSettlement); };}
+function renderProjectCurrentSettlementFields(selectedType, existing){const cont=document.getElementById('projectCurrentSettlementFields'); if(!cont) return; cont.innerHTML=''; let html=''; if(selectedType==='order'){ html = `<div><label class="text-sm text-gray-700">每笔订单结束后（天）</label><input id="project_current_orderDays" type="number" min="0" class="w-full border rounded px-2 py-1" value="${existing?.orderDays ?? ''}"></div>`; } else if(selectedType==='month'){ html=`<div><label class="text-sm text-gray-700">每月结算日（号）</label><input id="project_current_monthDay" type="number" min="1" max="31" class="w-full border rounded px-2 py-1" value="${existing?.monthDay ?? ''}"></div>`; } else if(selectedType==='year'){ html=`<div><label class="text-sm text-gray-700">每年结算（月份）</label><input id="project_current_yearMonth" type="number" min="1" max="12" class="w-full border rounded px-2 py-1" value="${existing?.yearMonth ?? ''}"></div><div><label class="text-sm text-gray-700">每年结算（日期）</label><input id="project_current_yearDay" type="number" min="1" max="31" class="w-full border rounded px-2 py-1" value="${existing?.yearDay ?? ''}"></div>`; } cont.innerHTML=html; const s={type:selectedType}; if(selectedType==='order'){ const el=document.getElementById('project_current_orderDays'); if(el) el.oninput=()=>{ s.orderDays=parseInt(el.value||'0',10)||0; scheme.currentSettlement=s; }; } else if(selectedType==='month'){ const el=document.getElementById('project_current_monthDay'); if(el) el.oninput=()=>{ s.monthDay=parseInt(el.value||'1',10)||1; scheme.currentSettlement=s; }; } else if(selectedType==='year'){ const em=document.getElementById('project_current_yearMonth'); const ed=document.getElementById('project_current_yearDay'); const sync=()=>{ s.yearMonth=parseInt(em?.value||'1',10)||1; s.yearDay=parseInt(ed?.value||'1',10)||1; scheme.currentSettlement=s; }; if(em) em.oninput=sync; if(ed) ed.oninput=sync; sync(); } scheme.currentSettlement=s;}
+function updateProjectFixedSettlementOptions(){const sel=document.getElementById('projectFixedSettlementType'); if(!sel) return; sel.innerHTML=''; [{v:'order',t:'按订单结算'},{v:'month',t:'按月结算'},{v:'revenue_end',t:'营收时间结束后统一结算'}].forEach(o=>{const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; sel.appendChild(opt);}); const tp=scheme.fixedSettlement?.type||'order'; sel.value=tp; renderProjectFixedSettlementFields(tp, scheme.fixedSettlement); sel.onchange=(e)=>{ renderProjectFixedSettlementFields(e.target.value, scheme.fixedSettlement); };}
+function renderProjectFixedSettlementFields(selectedType, existing){const cont=document.getElementById('projectFixedSettlementFields'); if(!cont) return; cont.innerHTML=''; let html=''; if(selectedType==='order'){ html = `<div><label class="text-sm text-gray-700">每笔订单结束后（天）</label><input id="project_fixed_orderDays" type="number" min="0" class="w-full border rounded px-2 py-1" value="${existing?.orderDays ?? ''}"></div>`; } else if(selectedType==='month'){ html=`<div><label class="text-sm text-gray-700">每月结算日（号）</label><input id="project_fixed_monthDay" type="number" min="1" max="31" class="w-full border rounded px-2 py-1" value="${existing?.monthDay ?? ''}"></div>`; } else if(selectedType==='revenue_end'){ html=`<div><label class="text-sm text-gray-700">营收结束后（天）结算</label><input id="project_fixed_revenueEndDays" type="number" min="0" class="w-full border rounded px-2 py-1" value="${existing?.revenueEndDays ?? ''}"></div>`; } cont.innerHTML=html; const s={type:selectedType}; if(selectedType==='order'){ const el=document.getElementById('project_fixed_orderDays'); if(el) el.oninput=()=>{ s.orderDays=parseInt(el.value||'0',10)||0; scheme.fixedSettlement=s; }; } else if(selectedType==='month'){ const el=document.getElementById('project_fixed_monthDay'); if(el) el.oninput=()=>{ s.monthDay=parseInt(el.value||'1',10)||1; scheme.fixedSettlement=s; }; } else if(selectedType==='revenue_end'){ const el=document.getElementById('project_fixed_revenueEndDays'); if(el) el.oninput=()=>{ s.revenueEndDays=parseInt(el.value||'0',10)||0; scheme.fixedSettlement=s; }; } scheme.fixedSettlement=s;}
+updateProjectCurrentSettlementOptions();
+updateProjectFixedSettlementOptions();
+function toggleSettlementByProjectType(tp){const cw=document.getElementById('projectCurrentSettlementWrap'); const fw=document.getElementById('projectFixedSettlementWrap'); if(!cw||!fw) return; if(tp==='fixed'){ cw.classList.add('hidden'); fw.classList.remove('hidden'); } else { fw.classList.add('hidden'); cw.classList.remove('hidden'); }}
+toggleSettlementByProjectType(els.ruleCfgType?els.ruleCfgType.value:scheme.accountType);
 function renderSelectedStores(){const cont=els.selectedStores;if(!cont) return; const items=(scheme.selectedStores||[]).map(s=>`<span class="inline-flex items-center px-2 py-1 bg-gray-100 text-sm text-gray-700 rounded">${s.name}<button class="ml-2 text-red-600 remove-store" data-id="${s.id}"><i class="fas fa-times"></i></button></span>`).join(''); cont.innerHTML=items||'<span class="text-xs text-gray-400">未指定门店</span>'; if(items){ cont.querySelectorAll('button.remove-store').forEach(b=>{ b.onclick=()=>{ const id=b.dataset.id; scheme.selectedStores=scheme.selectedStores.filter(x=>x.id!==id); renderSelectedStores(); }; }); } const cnt=document.getElementById('selectedStoresCount'); if(cnt) cnt.textContent=((scheme.selectedStores||[]).length||0)+' 个'; }
 if(els.ledgerScopeType){ els.ledgerScopeType.onchange=()=>{ scheme.storeMode = els.ledgerScopeType.value==='multi' ? 'multi' : 'single'; if(scheme.storeMode==='single' && Array.isArray(scheme.selectedStores) && scheme.selectedStores.length>1){ scheme.selectedStores = scheme.selectedStores.slice(0,1); renderSelectedStores(); } }; }
 if(els.btnPickStores){ els.btnPickStores.onclick=()=>openStorePicker(); }
