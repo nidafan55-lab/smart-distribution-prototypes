@@ -4,25 +4,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>智能分账系统 · 入口</title>
-  <meta name="robots" content="noindex">
-  <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:24px}a{color:#2563eb}</style>
-  <script>
-    (function(){
-      var parts = (window.location.pathname || '/').split('/').filter(Boolean);
-      var base = parts.length ? ('/' + parts[0]) : '/';
-      var target = base + '/design/prototypes/allocation-mindmap.html';
-      try{ window.location.replace(target); }catch(e){}
-      document.addEventListener('DOMContentLoaded', function(){
-        var link = document.getElementById('entry');
-        if(link) link.href = target;
-      });
-    })();
-  </script>
+  <meta name="robots" content="index,follow">
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:24px;background:#f9fafb}
+    a{color:#2563eb;text-decoration:none}
+    .grid{display:grid;gap:16px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px}
+    .title{font-size:20px;font-weight:700;margin-bottom:8px}
+    .desc{font-size:14px;color:#6b7280;margin-top:4px}
+    .link{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px}
+  </style>
 </head>
 <body>
-  <div>
-    <h1>正在跳转到入口页</h1>
-    <p>如未自动跳转，请点击：<a id="entry" href="../design/prototypes/allocation-mindmap.html">进入入口页</a></p>
+  <div class="grid" style="grid-template-columns:1fr;max-width:960px;margin:0 auto">
+    <div class="card">
+      <div class="title">智能分账系统 · 原型入口</div>
+      <div class="desc">选择页面进入原型预览</div>
+      <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap">
+        <a class="link" id="lnk-mindmap" href="#">分账项目创建（思维导图）</a>
+      </div>
+    </div>
   </div>
+  <script>
+    (function(){
+      var parts=(location.pathname||'/').split('/').filter(Boolean);
+      var base=parts.length?('/'+parts[0]):'/';
+      var mindmap=base+'/design/prototypes/allocation-mindmap.html';
+      var a=document.getElementById('lnk-mindmap'); if(a) a.href=mindmap;
+    })();
+  </script>
 </body>
 </html>
