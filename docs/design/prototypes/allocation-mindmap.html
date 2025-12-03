@@ -92,6 +92,31 @@ body.review-mode .bottom-action-buttons {
       <div id="projectFixedSettlementFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3"></div>
     </div>
   </div>
+  <div class="mt-3 space-y-2">
+    <div class="text-sm font-medium text-gray-700">上限配置</div>
+    <div class="flex items-center gap-3">
+      <label class="inline-flex items-center gap-2"><input id="limitCapToggle" type="checkbox" class="h-4 w-4">启用上限配置</label>
+    </div>
+    <div id="limitCapSection" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+      <div class="inline-flex items-center border rounded-lg overflow-hidden w-full min-w-0">
+        <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">限定额度</span>
+        <select id="limitCapType" class="px-3 py-2 text-sm focus:outline-none">
+          <option value="percentage">百分比</option>
+          <option value="fixed">定额</option>
+        </select>
+        <input id="limitCapValue" type="number" step="0.01" min="0" class="px-3 py-2 text-sm focus:outline-none flex-1" placeholder="请输入数值">
+        <span id="limitCapUnit" class="px-3 py-2 text-sm text-gray-600 bg-gray-50">%</span>
+      </div>
+      <div class="inline-flex items-center border rounded-lg overflow-hidden w-full min-w-0">
+        <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">剩余款项汇入账户</span>
+        <div id="limitCapTargetGroup" class="inline-flex flex-wrap">
+          <button data-target="specified" class="px-3 py-2 text-sm">选择账户</button>
+          <button data-target="none" class="px-3 py-2 text-sm">未指定</button>
+        </div>
+        <span id="limitCapAccountLabel" class="px-3 py-2 text-sm text-gray-700">未指定</span>
+      </div>
+    </div>
+  </div>
   <div class="text-sm font-medium text-gray-700 mb-2">账目设置</div>
   <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center mb-2">
     <div class="md:col-span-4">
@@ -253,24 +278,48 @@ body.review-mode .bottom-action-buttons {
     </div>
   </div>
 </div>
-<script>const scheme={name:'',rule:'',ruleName:'',accountType:'current',effectiveTime:'',expireTime:'',currentSettlement:{type:'order',orderDays:0},fixedSettlement:{type:'order',orderDays:0},storeMode:'single',selectedStores:[],ledgerItems:[],currentLedgerId:null,nodes:{},roots:[]};let idSeq=1;const accountOptions=['账号一','账号二','账号三','账号四','账号五','星力展厅店-店长','宝点数字体验店-店长','宝点数字体验店-店长','星力展厅店-店长','平台-服务费','代理-华东大区'];
+<div id="limitCapAccountModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h4 class="text-lg font-medium">选择汇入账户</h4>
+      <button id="limitCapAccClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="inline-flex items-center border rounded-lg overflow-hidden mb-2 w-full">
+      <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">搜索账户</span>
+      <input id="limitCapAccountSearch" class="px-3 py-2 text-sm focus:outline-none flex-1" placeholder="输入关键字">
+    </div>
+    <div id="limitCapAccountList" class="max-h-60 overflow-auto border rounded p-2 space-y-1"></div>
+    <div class="flex items-center justify-between mt-3">
+      <div class="space-x-2"></div>
+      <div class="space-x-2">
+        <button id="limitCapAccCancel" class="px-3 py-1 bg-gray-200 rounded">取消</button>
+        <button id="limitCapAccConfirm" class="px-3 py-1 bg-blue-600 text-white rounded">确定</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>const scheme={name:'',rule:'',ruleName:'',accountType:'current',effectiveTime:'',expireTime:'',currentSettlement:{type:'order',orderDays:0},fixedSettlement:{type:'order',orderDays:0},storeMode:'single',selectedStores:[],limitConfig:{enabled:false,type:'percentage',value:0,account:'',overflowTarget:'specified'},ledgerItems:[],currentLedgerId:null,nodes:{},roots:[]};let idSeq=1;const accountOptions=['账号一','账号二','账号三','账号四','账号五','星力展厅店-店长','宝点数字体验店-店长','宝点数字体验店-店长','星力展厅店-店长','平台-服务费','代理-华东大区'];
 const terminalOptions=['小程序','收银台#000001','收银台#000002','pos机#000001','pos机#000002'];
 const ruleTemplates=[
   {id:'R001',name:'门店日常营收分成',accountType:'current',effectiveTime:'2025-11-01T00:00',expireTime:''},
   {id:'R002',name:'节假日活动营收分成',accountType:'fixed',effectiveTime:'2025-11-19T00:00',expireTime:'2025-11-25T23:59'}
 ];
-const els={schemeName:document.getElementById('schemeName'),ruleCfgName:document.getElementById('ruleCfgName'),ruleCfgType:document.getElementById('ruleCfgType'),ruleCfgStart:document.getElementById('ruleCfgStart'),ruleCfgEnd:document.getElementById('ruleCfgEnd'),ruleSourceNew:document.getElementById('ruleSourceNew'),ruleSourceExisting:document.getElementById('ruleSourceExisting'),ruleExistingSelectCont:document.getElementById('ruleExistingSelectCont'),ruleExistingSelect:document.getElementById('ruleExistingSelect'),ruleEditorFields:document.getElementById('ruleEditorFields'),ledgerScopeType:document.getElementById('ledgerScopeType'),btnPickStores:document.getElementById('btnPickStores'),selectedStores:document.getElementById('selectedStores'),palette:document.getElementById('palette'),search:document.getElementById('search'),root:document.getElementById('root'),canvas:document.getElementById('canvas'),issues:document.getElementById('issues'),summary:document.getElementById('summary'),btnExport:document.getElementById('btnExport'),btnValidate:document.getElementById('btnValidate'),btnReset:document.getElementById('btnReset'),btnLedgerAdd:document.getElementById('btnLedgerAdd'),btnBatchEditTerminals:document.getElementById('btnBatchEditTerminals'),ledgerTableBody:document.getElementById('ledgerTableBody'),ledgerEmptyHint:document.getElementById('ledgerEmptyHint'),ruleHintBox:document.getElementById('ruleHintBox')};
+const els={schemeName:document.getElementById('schemeName'),ruleCfgName:document.getElementById('ruleCfgName'),ruleCfgType:document.getElementById('ruleCfgType'),ruleCfgStart:document.getElementById('ruleCfgStart'),ruleCfgEnd:document.getElementById('ruleCfgEnd'),ruleSourceNew:document.getElementById('ruleSourceNew'),ruleSourceExisting:document.getElementById('ruleSourceExisting'),ruleExistingSelectCont:document.getElementById('ruleExistingSelectCont'),ruleExistingSelect:document.getElementById('ruleExistingSelect'),ruleEditorFields:document.getElementById('ruleEditorFields'),ledgerScopeType:document.getElementById('ledgerScopeType'),btnPickStores:document.getElementById('btnPickStores'),selectedStores:document.getElementById('selectedStores'),limitCapToggle:document.getElementById('limitCapToggle'),limitCapSection:document.getElementById('limitCapSection'),limitCapType:document.getElementById('limitCapType'),limitCapValue:document.getElementById('limitCapValue'),limitCapUnit:document.getElementById('limitCapUnit'),limitCapTargetGroup:document.getElementById('limitCapTargetGroup'),limitCapAccountLabel:document.getElementById('limitCapAccountLabel'),palette:document.getElementById('palette'),search:document.getElementById('search'),root:document.getElementById('root'),canvas:document.getElementById('canvas'),issues:document.getElementById('issues'),summary:document.getElementById('summary'),btnExport:document.getElementById('btnExport'),btnValidate:document.getElementById('btnValidate'),btnReset:document.getElementById('btnReset'),btnLedgerAdd:document.getElementById('btnLedgerAdd'),btnBatchEditTerminals:document.getElementById('btnBatchEditTerminals'),ledgerTableBody:document.getElementById('ledgerTableBody'),ledgerEmptyHint:document.getElementById('ledgerEmptyHint'),ruleHintBox:document.getElementById('ruleHintBox')};
 els.schemeName.oninput=()=>scheme.name=els.schemeName.value;if(els.ruleCfgName){els.ruleCfgName.oninput=()=>scheme.ruleName=els.ruleCfgName.value;}
 function toggleEndByType(val){const c=document.getElementById('ruleCfgEndCont');if(val==='fixed'){c.classList.remove('hidden');}else{c.classList.add('hidden');}}
 if(els.ruleCfgType){els.ruleCfgType.onchange=()=>{scheme.accountType=els.ruleCfgType.value;toggleEndByType(scheme.accountType);toggleSettlementByProjectType(scheme.accountType);};}
 function setRuleFieldsDisabled(dis){['ruleCfgName','ruleCfgType','ruleCfgStart','ruleCfgEnd'].forEach(k=>{if(els[k]) els[k].disabled=!!dis;});}
-function populateRuleExistingOptions(){if(!els.ruleExistingSelect) return; els.ruleExistingSelect.innerHTML='<option value="">请选择</option>'+ruleTemplates.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');}
+const ruleStorageKey='ruleConfigRules';
+function loadStoredRules(){try{const raw=localStorage.getItem(ruleStorageKey)||'[]';const arr=JSON.parse(raw)||[];return Array.isArray(arr)?arr:[];}catch(e){return []}}
+function populateRuleExistingOptions(){if(!els.ruleExistingSelect) return; const stored=loadStoredRules(); const storedOpts=stored.map((r,i)=>`<option value="rule:${i}">${r.name||('规则'+(i+1))}</option>`).join(''); const tplOpts=ruleTemplates.map(r=>`<option value="tpl:${r.id}">${r.name}</option>`).join(''); els.ruleExistingSelect.innerHTML='<option value="">请选择</option>'+storedOpts+tplOpts;}
 function applyRuleTemplateById(id){const tpl=ruleTemplates.find(x=>x.id===id);if(!tpl) return; if(els.ruleCfgName) els.ruleCfgName.value=tpl.name; if(els.ruleCfgType) els.ruleCfgType.value=tpl.accountType; if(els.ruleCfgStart) els.ruleCfgStart.value=tpl.effectiveTime||''; if(els.ruleCfgEnd) els.ruleCfgEnd.value=tpl.expireTime||''; scheme.ruleName=tpl.name; scheme.accountType=tpl.accountType; scheme.effectiveTime=tpl.effectiveTime||''; scheme.expireTime=tpl.expireTime||''; toggleEndByType(scheme.accountType); toggleSettlementByProjectType(scheme.accountType); setRuleFieldsDisabled(true);} 
-function switchRuleSource(src){if(src==='existing'){ if(els.ruleExistingSelectCont) els.ruleExistingSelectCont.classList.remove('hidden'); setRuleFieldsDisabled(true); } else { if(els.ruleExistingSelectCont) els.ruleExistingSelectCont.classList.add('hidden'); setRuleFieldsDisabled(false); }}
+function setLimitCapFieldsDisabled(dis){['limitCapToggle','limitCapType','limitCapValue'].forEach(k=>{const el=els[k]; if(el) el.disabled=!!dis;}); const g=els.limitCapTargetGroup; if(g){ g.classList.toggle('pointer-events-none',!!dis); g.classList.toggle('opacity-50',!!dis); }}
+function switchRuleSource(src){if(src==='existing'){ if(els.ruleExistingSelectCont) els.ruleExistingSelectCont.classList.remove('hidden'); setRuleFieldsDisabled(true); setLimitCapFieldsDisabled(true); } else { if(els.ruleExistingSelectCont) els.ruleExistingSelectCont.classList.add('hidden'); setRuleFieldsDisabled(false); setLimitCapFieldsDisabled(false); }}
 populateRuleExistingOptions();
 if(els.ruleSourceNew){els.ruleSourceNew.onchange=()=>switchRuleSource('new');}
 if(els.ruleSourceExisting){els.ruleSourceExisting.onchange=()=>switchRuleSource('existing');}
-if(els.ruleExistingSelect){els.ruleExistingSelect.onchange=()=>applyRuleTemplateById(els.ruleExistingSelect.value);} 
+function applySelectedRuleValue(val){ if(!val) return; if(val.startsWith('rule:')){ const idx=parseInt(val.split(':')[1]||'0',10)||0; const list=loadStoredRules(); const ru=list[idx]; if(!ru) return; if(els.ruleCfgName) els.ruleCfgName.value=ru.name||''; if(els.ruleCfgType) els.ruleCfgType.value=ru.projectType||'current'; if(els.ruleCfgStart) els.ruleCfgStart.value=ru.effectiveTime||''; if(els.ruleCfgEnd) els.ruleCfgEnd.value=ru.expireTime||''; scheme.ruleName=ru.name||''; scheme.accountType=ru.projectType||'current'; scheme.effectiveTime=ru.effectiveTime||''; scheme.expireTime=ru.expireTime||''; toggleEndByType(scheme.accountType); toggleSettlementByProjectType(scheme.accountType); setRuleFieldsDisabled(true); if(els.limitCapToggle) els.limitCapToggle.checked=!!ru.capEnabled; if(ru.capEnabled){ if(els.limitCapSection) els.limitCapSection.classList.remove('hidden'); scheme.limitConfig.enabled=true; } else { if(els.limitCapSection) els.limitCapSection.classList.add('hidden'); scheme.limitConfig.enabled=false; } const ct=(ru.capType==='fixed')?'fixed':'percentage'; scheme.limitConfig.type=ct; if(els.limitCapType) els.limitCapType.value=ct; if(els.limitCapUnit) els.limitCapUnit.textContent=ct==='fixed'?'¥':'%'; const v=(ru.capValue==null)?0:ru.capValue; scheme.limitConfig.value=v; if(els.limitCapValue) els.limitCapValue.value=v; const acc=ru.capAccount||''; scheme.limitConfig.account=acc; scheme.limitConfig.overflowTarget=acc?'specified':'none'; const lab=els.limitCapAccountLabel; if(lab){ lab.textContent=acc?('已指定：'+acc):'未指定'; lab.style.display = acc? '' : 'none'; } setLimitCapFieldsDisabled(true); updateLimitCapTargetUI(); } else { const id=val.split(':')[1]; applyRuleTemplateById(id.replace(/^tpl:/,'')); setLimitCapFieldsDisabled(true); updateLimitCapTargetUI(); } }
+if(els.ruleExistingSelect){els.ruleExistingSelect.onchange=()=>applySelectedRuleValue(els.ruleExistingSelect.value);} 
 function updateProjectCurrentSettlementOptions(){const sel=document.getElementById('projectCurrentSettlementType'); if(!sel) return; sel.innerHTML=''; [{v:'order',t:'按订单结算'},{v:'month',t:'按月结算'},{v:'year',t:'按年结算'}].forEach(o=>{const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; sel.appendChild(opt);}); const tp=scheme.currentSettlement?.type||'order'; sel.value=tp; renderProjectCurrentSettlementFields(tp, scheme.currentSettlement); sel.onchange=(e)=>{ renderProjectCurrentSettlementFields(e.target.value, scheme.currentSettlement); }}
 function renderProjectCurrentSettlementFields(selectedType, existing){const cont=document.getElementById('projectCurrentSettlementFields'); if(!cont) return; cont.innerHTML=''; let html=''; if(selectedType==='order'){ html = `<div><label class="text-sm text-gray-700">每笔订单结束后（天）</label><input id="project_current_orderDays" type="number" min="0" class="w-full border rounded px-2 py-1" value="${existing?.orderDays ?? ''}"></div>`; } else if(selectedType==='month'){ html=`<div><label class="text-sm text-gray-700">每月结算日（号）</label><input id="project_current_monthDay" type="number" min="1" max="31" class="w-full border rounded px-2 py-1" value="${existing?.monthDay ?? ''}"></div>`; } else if(selectedType==='year'){ html=`<div><label class="text-sm text-gray-700">每年结算（月份）</label><input id="project_current_yearMonth" type="number" min="1" max="12" class="w-full border rounded px-2 py-1" value="${existing?.yearMonth ?? ''}"></div><div><label class="text-sm text-gray-700">每年结算（日期）</label><input id="project_current_yearDay" type="number" min="1" max="31" class="w-full border rounded px-2 py-1" value="${existing?.yearDay ?? ''}"></div>`; } cont.innerHTML=html; const s={type:selectedType}; if(selectedType==='order'){ const el=document.getElementById('project_current_orderDays'); if(el) el.oninput=()=>{ s.orderDays=parseInt(el.value||'0',10)||0; scheme.currentSettlement=s; }; } else if(selectedType==='month'){ const el=document.getElementById('project_current_monthDay'); if(el) el.oninput=()=>{ s.monthDay=parseInt(el.value||'1',10)||1; scheme.currentSettlement=s; }; } else if(selectedType==='year'){ const em=document.getElementById('project_current_yearMonth'); const ed=document.getElementById('project_current_yearDay'); const sync=()=>{ s.yearMonth=parseInt(em?.value||'1',10)||1; s.yearDay=parseInt(ed?.value||'1',10)||1; scheme.currentSettlement=s; }; if(em) em.oninput=sync; if(ed) ed.oninput=sync; sync(); } scheme.currentSettlement=s}
 function updateProjectFixedSettlementOptions(){const sel=document.getElementById('projectFixedSettlementType'); if(!sel) return; sel.innerHTML=''; [{v:'order',t:'按订单结算'},{v:'month',t:'按月结算'},{v:'revenue_end',t:'营收时间结束后统一结算'}].forEach(o=>{const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; sel.appendChild(opt);}); const tp=scheme.fixedSettlement?.type||'order'; sel.value=tp; renderProjectFixedSettlementFields(tp, scheme.fixedSettlement); sel.onchange=(e)=>{ renderProjectFixedSettlementFields(e.target.value, scheme.fixedSettlement); }}
@@ -283,6 +332,11 @@ function renderSelectedStores(){const cont=els.selectedStores;if(!cont) return; 
 if(els.ledgerScopeType){ els.ledgerScopeType.onchange=()=>{ scheme.storeMode = els.ledgerScopeType.value==='multi' ? 'multi' : 'single'; if(scheme.storeMode==='single' && Array.isArray(scheme.selectedStores) && scheme.selectedStores.length>1){ scheme.selectedStores = scheme.selectedStores.slice(0,1); renderSelectedStores(); } }; }
 if(els.btnPickStores){ els.btnPickStores.onclick=()=>openStorePicker(); }
 renderSelectedStores();
+if(els.limitCapToggle && els.limitCapSection){ els.limitCapToggle.onchange = function(){ if(this.checked){ els.limitCapSection.classList.remove('hidden'); scheme.limitConfig.enabled=true; } else { els.limitCapSection.classList.add('hidden'); scheme.limitConfig.enabled=false; } updateLimitCapTargetUI(); }; }
+if(els.limitCapType){ els.limitCapType.onchange = function(){ const v=this.value==='fixed'?'fixed':'percentage'; scheme.limitConfig.type=v; if(els.limitCapUnit){ els.limitCapUnit.textContent = v==='fixed' ? '¥' : '%'; } }; }
+if(els.limitCapValue){ els.limitCapValue.oninput = function(){ const num=parseFloat(this.value||''); scheme.limitConfig.value = isNaN(num)?0:num; }; }
+function updateLimitCapTargetUI(){ if(!els.limitCapTargetGroup) return; const sel=scheme.limitConfig?.overflowTarget||'specified'; els.limitCapTargetGroup.querySelectorAll('button').forEach(b=>{ const active=(b.dataset.target===sel); b.classList.toggle('bg-blue-600',active); b.classList.toggle('text-white',active); }); const lab=els.limitCapAccountLabel; if(lab) lab.style.display = sel==='specified' ? '' : 'none'; }
+if(els.limitCapTargetGroup){ els.limitCapTargetGroup.querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ const t=this.dataset.target||'specified'; scheme.limitConfig.overflowTarget=t; updateLimitCapTargetUI(); if(t==='specified'){ openLimitCapAccountModal(); } }; }); updateLimitCapTargetUI(); }
 if(els.ruleCfgStart){els.ruleCfgStart.onchange=()=>scheme.effectiveTime=els.ruleCfgStart.value;}
 if(els.ruleCfgEnd){els.ruleCfgEnd.onchange=()=>scheme.expireTime=els.ruleCfgEnd.value;}
 toggleEndByType(els.ruleCfgType?els.ruleCfgType.value:'current');
@@ -298,6 +352,10 @@ function openAccountPicker(targetParentId){pickContext.parentId=targetParentId||
 function closeAccountPicker(){document.getElementById('accountPickerModal').classList.add('hidden');}
 function commitAddAccounts(){const list=document.getElementById('accountPickerList');const checks=list.querySelectorAll('input.account-pick:checked');const names=[...checks].map(c=>c.value);if(!names.length){closeAccountPicker();return;}names.forEach(n=>addNode(n,pickContext.parentId));render();validate();closeAccountPicker();}
 (function(){const btnConfirm=document.getElementById('accountPickerConfirm');const btnCancel=document.getElementById('accountPickerCancel');const btnClose=document.getElementById('accountPickerClose');const btnAll=document.getElementById('accountPickerSelectAll');const btnClear=document.getElementById('accountPickerClear');if(btnConfirm){btnConfirm.onclick=commitAddAccounts;}if(btnCancel){btnCancel.onclick=closeAccountPicker;}if(btnClose){btnClose.onclick=closeAccountPicker;}if(btnAll){btnAll.onclick=()=>{const list=document.getElementById('accountPickerList');list.querySelectorAll('input.account-pick:not(:disabled)').forEach(c=>c.checked=true);};}if(btnClear){btnClear.onclick=()=>{const list=document.getElementById('accountPickerList');list.querySelectorAll('input.account-pick').forEach(c=>c.checked=false);};}})();
+function openLimitCapAccountModal(){ const modal=document.getElementById('limitCapAccountModal'); const list=document.getElementById('limitCapAccountList'); const search=document.getElementById('limitCapAccountSearch'); const selected=scheme.limitConfig?.account||''; list.innerHTML=accountOptions.map(n=>`<label class=\"flex items-center justify-between px-2 py-1 rounded hover:bg-gray-50\"><span class=\"text-sm\">${n}</span><input type=\"radio\" name=\"cap-acc\" value=\"${n}\" ${selected===n?'checked':''}></label>`).join(''); search.value=''; const filter=()=>{const k=search.value.trim().toLowerCase();[...list.children].forEach(el=>{const txt=el.querySelector('span').textContent.toLowerCase();el.style.display=(k && !txt.includes(k))?'none':'';});}; search.oninput=filter; filter(); modal.classList.remove('hidden'); }
+function closeLimitCapAccountModal(){ document.getElementById('limitCapAccountModal')?.classList.add('hidden'); }
+function commitLimitCapAccount(){ const check=document.querySelector('#limitCapAccountList input[name=\"cap-acc\"]:checked'); const name=check?check.value:''; scheme.limitConfig.account=name||''; const lab=document.getElementById('limitCapAccountLabel'); if(lab) lab.textContent = name ? ('已指定：'+name) : '未指定'; closeLimitCapAccountModal(); }
+(function(){ const btnC=document.getElementById('limitCapAccConfirm'); const btnX=document.getElementById('limitCapAccCancel'); const btnClose=document.getElementById('limitCapAccClose'); if(btnC) btnC.onclick=commitLimitCapAccount; if(btnX) btnX.onclick=closeLimitCapAccountModal; if(btnClose) btnClose.onclick=closeLimitCapAccountModal; })();
 function openTerminalPicker(ledgerId){
   terminalPickContext.mode='single';
   terminalPickContext.ledgerId = ledgerId;
