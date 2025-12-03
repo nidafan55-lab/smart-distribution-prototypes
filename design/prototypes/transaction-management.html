@@ -86,6 +86,49 @@
         </div>
       </div>
     </div>
+    <div id="terminateModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+      <div class="bg-white w-full max-w-lg rounded-lg shadow-lg">
+        <div class="flex items-center justify-between px-4 py-3 border-b">
+          <div class="font-medium">终止分账</div>
+          <button id="terminateClose" class="text-gray-600 px-2 py-1"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-4 space-y-3">
+          <div class="flex items-center gap-4">
+            <label class="inline-flex items-center gap-2"><input type="radio" name="termType" id="termTypeOrder" value="order" checked><span>按订单结算</span></label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="termType" id="termTypeCycle" value="cycle"><span>按年/按月结算</span></label>
+          </div>
+          <div id="termOrderGroup" class="space-y-3">
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">结算时间</span>
+              <input type="text" id="termOrderRule" class="px-3 py-2 text-sm focus:outline-none flex-1" value="每笔订单结束后7天" disabled>
+            </div>
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">入账终止时间</span>
+              <input type="datetime-local" id="termOrderStop" class="px-3 py-2 text-sm focus:outline-none flex-1">
+            </div>
+            <div class="text-xs text-gray-600">此时间之后的订单不纳入分账范围</div>
+          </div>
+          <div id="termCycleGroup" class="space-y-3 hidden">
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">结算方式</span>
+              <input type="text" id="termCycleMethod" class="px-3 py-2 text-sm focus:outline-none flex-1" value="按月结算——每月5日" disabled>
+            </div>
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">第 n 次后终止</span>
+              <input type="number" id="termCycleN" min="1" step="1" value="1" class="px-3 py-2 text-sm focus:outline-none w-24 text-right">
+            </div>
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">分账终止时间</span>
+              <input type="datetime-local" id="termCycleStop" class="px-3 py-2 text-sm focus:outline-none flex-1" disabled>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 px-4 py-3 border-t">
+          <button id="terminateCancel" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded">取消</button>
+          <button id="terminateConfirm" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">确定</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -140,8 +183,9 @@
             </div>
           </div>
           <div class="tx-card-body hidden" data-id="${p.id}">
-            <div class="px-4 py-2">
+            <div class="px-4 py-2 flex items-center gap-2">
               <button class="tx-edit-rule px-3 py-1 bg-blue-600 text-white rounded" data-id="${p.id}">修改规则</button>
+              <button class="tx-terminate-alloc px-3 py-1 bg-red-600 text-white rounded" data-id="${p.id}">终止分账</button>
             </div>
             <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -172,6 +216,12 @@
         b.onclick=function(){
           const pid=this.getAttribute('data-id');
           openRuleEdit(pid);
+        };
+      });
+      document.querySelectorAll('.tx-terminate-alloc').forEach(b=>{
+        b.onclick=function(){
+          const pid=this.getAttribute('data-id');
+          openTerminate(pid);
         };
       });
       document.querySelectorAll('.tx-reuse-rule').forEach(b=>{
@@ -291,6 +341,57 @@
       const proj=txMgmtData.find(x=>x.id===pid); if(proj) proj.rule=name;
       closeReuse();
       renderTxCards(txMgmtData);
+    };
+
+    let terminateProjectId=null;
+    function pad2(n){return (n<10?'0':'')+n}
+    function formatInputDate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}` }
+    function nextMonthlyStop(n, day){
+      const now=new Date();
+      let first=new Date(now.getFullYear(), now.getMonth(), day, 0, 0, 0);
+      if(first<=now) first=new Date(now.getFullYear(), now.getMonth()+1, day, 0, 0, 0);
+      const target=new Date(first.getFullYear(), first.getMonth()+ (n-1), day, 0, 0, 0);
+      return formatInputDate(target);
+    }
+    function openTerminate(pid){
+      terminateProjectId=pid;
+      const m=document.getElementById('terminateModal');
+      document.getElementById('termTypeOrder').checked=true;
+      document.getElementById('termOrderGroup').classList.remove('hidden');
+      document.getElementById('termCycleGroup').classList.add('hidden');
+      document.getElementById('termOrderStop').value='';
+      document.getElementById('termCycleN').value='1';
+      document.getElementById('termCycleStop').value=nextMonthlyStop(1,5);
+      m.classList.remove('hidden');
+    }
+    function closeTerminate(){ document.getElementById('terminateModal').classList.add('hidden'); }
+    document.getElementById('terminateClose').onclick=closeTerminate;
+    document.getElementById('terminateCancel').onclick=closeTerminate;
+    document.getElementById('termTypeOrder').onchange=function(){
+      document.getElementById('termOrderGroup').classList.remove('hidden');
+      document.getElementById('termCycleGroup').classList.add('hidden');
+    };
+    document.getElementById('termTypeCycle').onchange=function(){
+      document.getElementById('termOrderGroup').classList.add('hidden');
+      document.getElementById('termCycleGroup').classList.remove('hidden');
+      const n=parseInt(document.getElementById('termCycleN').value||'1',10)||1;
+      document.getElementById('termCycleStop').value=nextMonthlyStop(n,5);
+    };
+    document.getElementById('termCycleN').addEventListener('input',function(){
+      const n=parseInt(this.value||'1',10)||1;
+      document.getElementById('termCycleStop').value=nextMonthlyStop(n,5);
+    });
+    document.getElementById('terminateConfirm').onclick=function(){
+      const type=document.getElementById('termTypeOrder').checked?'order':'cycle';
+      if(type==='order'){
+        const v=document.getElementById('termOrderStop').value||'';
+        alert((terminateProjectId||'')+" 入账终止时间设置为 "+(v||'未选择'));
+      }else{
+        const n=parseInt(document.getElementById('termCycleN').value||'1',10)||1;
+        const v=document.getElementById('termCycleStop').value||'';
+        alert((terminateProjectId||'')+" 从现在起第 "+n+" 次分账后终止，时间为 "+v);
+      }
+      closeTerminate();
     };
   </script>
 </body>

@@ -122,6 +122,16 @@
                 <h1 id="pageTitle" class="text-xl font-bold ml-4">账户管理</h1>
               </div>
               <div class="flex items-center">
+                <div class="relative mr-4">
+                  <button id="notifToggle" class="relative text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none">
+                    <i class="fas fa-bell"></i>
+                    <span id="notifDot" class="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-gray-800"></span>
+                  </button>
+                  <div id="notifDropdown" class="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10 hidden">
+                    <div class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">您有一个项目待审核</div>
+                    <div class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">您有一笔保证金待汇款</div>
+                  </div>
+                </div>
                 <div class="relative">
                   <button class="flex items-center focus:outline-none dropdown-toggle">
                     <img class="h-8 w-8 rounded-full object-cover" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="用户头像">
@@ -200,9 +210,9 @@
                   <span>创建账户</span>
                 </button>
                 <div class="ml-4">
-                  <button class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-filter mr-2"></i>
-                    <span>筛选</span>
+                  <button id="btnCreateGroup" data-modal-target="createGroupModal" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-layer-group mr-2"></i>
+                    <span>创建分组</span>
                   </button>
                 </div>
               </div>
@@ -217,11 +227,15 @@
               <div class="flex border-b border-gray-200 dark:border-gray-700">
                 <button class="px-4 py-3 bg-blue-500 text-white font-medium rounded-tl-lg" data-tab="tree-view">
                   <i class="fas fa-sitemap mr-2"></i>
-                  树状视图
+                  架构视图
                 </button>
                 <button class="px-4 py-3 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 font-medium" data-tab="list-view">
                   <i class="fas fa-list mr-2"></i>
-                  列表视图
+                  账户列表
+                </button>
+                <button class="px-4 py-3 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 font-medium" data-tab="group-view">
+                  <i class="fas fa-layer-group mr-2"></i>
+                  分组列表
                 </button>
               </div>
               
@@ -345,6 +359,12 @@
                             <span class="sort-icon ml-1"><i class="fas fa-sort text-gray-400"></i></span>
                           </div>
                         </th>
+                        <th class="px-6 py-3 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" data-sort="group">
+                          <div class="flex items-center">
+                            账号分组
+                            <span class="sort-icon ml-1"><i class="fas fa-sort text-gray-400"></i></span>
+                          </div>
+                        </th>
                         <th class="px-6 py-3 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" data-sort="parent">
                           <div class="flex items-center">
                             上级账户
@@ -372,6 +392,7 @@
                       <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">AC-001</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">集团总经理</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">集团管理层</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">-</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">¥1,000,000.00</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
@@ -379,11 +400,101 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">编辑</button>
+                          <button class="text-indigo-600 hover:text-indigo-800 mr-3 btn-view-flow" data-account-name="集团总经理">查看流水</button>
                           <button class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300">更多</button>
                         </td>
                       </tr>
-                      <!-- 更多行... -->
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">AC-002</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">区域总经理</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">区域总经理</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">集团总经理</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">¥500,000.00</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          <span class="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">活跃</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button class="text-blue-600 hover:text-blue-900 mr-3">编辑</button>
+                          <button class="text-indigo-600 hover:text-indigo-800 mr-3 btn-view-flow" data-account-name="区域总经理">查看流水</button>
+                          <button class="text-gray-600 hover:text-gray-900">更多</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">AC-003</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">星力展厅店-店长</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">直营店店长</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">区域总经理</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">¥180,500.00</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          <span class="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">活跃</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button class="text-blue-600 hover:text-blue-900 mr-3">编辑</button>
+                          <button class="text-indigo-600 hover:text-indigo-800 mr-3 btn-view-flow" data-account-name="星力展厅店-店长">查看流水</button>
+                          <button class="text-gray-600 hover:text-gray-900">更多</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">AC-006</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">宝点数字体验店-店长</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">直营店店长</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">区域总经理</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">¥98,400.00</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">待激活</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button class="text-blue-600 hover:text-blue-900 mr-3">编辑</button>
+                          <button class="text-indigo-600 hover:text-indigo-800 mr-3 btn-view-flow" data-account-name="宝点数字体验店-店长">查看流水</button>
+                          <button class="text-gray-600 hover:text-gray-900">更多</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">AC-010</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">美团服务商</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">渠道服务商</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">-</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">¥76,320.00</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          <span class="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">活跃</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button class="text-blue-600 hover:text-blue-900 mr-3">编辑</button>
+                          <button class="text-indigo-600 hover:text-indigo-800 mr-3 btn-view-flow" data-account-name="美团服务商">查看流水</button>
+                          <button class="text-gray-600 hover:text-gray-900">更多</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">AC-011</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">华东区域总经理王总</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">区域总经理</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">集团总经理</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">¥512,000.00</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          <span class="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">活跃</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button class="text-blue-600 hover:text-blue-900 mr-3">编辑</button>
+                          <button class="text-indigo-600 hover:text-indigo-800 mr-3 btn-view-flow" data-account-name="华东区域总经理王总">查看流水</button>
+                          <button class="text-gray-600 hover:text-gray-900">更多</button>
+                        </td>
+                      </tr>
                     </tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="group-view" class="p-6 tab-content hidden">
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                      <tr>
+                        <th class="px-6 py-3 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">分组名称</th>
+                        <th class="px-6 py-3 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">创建时间</th>
+                        <th class="px-6 py-3 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">账号数量</th>
+                        <th class="px-6 py-3 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody id="groupListTbody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
                   </table>
                 </div>
               </div>
@@ -539,6 +650,149 @@
     </div>
   </div>
 
+  <!-- 创建分组模态框 -->
+  <div id="createGroupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-3xl w-full mx-4">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium">创建分组</h3>
+          <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300" data-modal-close>
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">分组名称</label>
+            <input id="groupNameInput" type="text" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+          </div>
+          <div class="text-sm font-medium text-gray-700 dark:text-gray-300">选择账户</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-300">账户名称</span>
+              <input id="groupFilterName" class="px-3 py-2 text-sm focus:outline-none flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="请输入账户名称">
+            </div>
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-300">上级账户</span>
+              <input id="groupFilterParent" class="px-3 py-2 text-sm focus:outline-none flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="请输入上级账户">
+            </div>
+          </div>
+          <div class="overflow-x-auto border rounded">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">选择</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">账户名称</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">账户ID</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">上级账户</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">手机号</th>
+                </tr>
+              </thead>
+              <tbody id="groupAccountsTbody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+            </table>
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button id="groupCancel" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded" data-modal-close>取消</button>
+            <button id="groupConfirm" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">确认</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑分组模态框 -->
+  <div id="editGroupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-3xl w-full mx-4">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium">编辑分组</h3>
+          <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300" data-modal-close>
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">分组名称</label>
+            <input id="editGroupNameInput" type="text" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+          </div>
+          <div class="text-sm font-medium text-gray-700 dark:text-gray-300">选择账户</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-300">账户名称</span>
+              <input id="editGroupFilterName" class="px-3 py-2 text-sm focus:outline-none flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="请输入账户名称">
+            </div>
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-300">上级账户</span>
+              <input id="editGroupFilterParent" class="px-3 py-2 text-sm focus:outline-none flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="请输入上级账户">
+            </div>
+          </div>
+          <div class="overflow-x-auto border rounded">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">选择</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">账户名称</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">账户ID</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">上级账户</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">手机号</th>
+                </tr>
+              </thead>
+              <tbody id="editGroupAccountsTbody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+            </table>
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button id="editGroupCancel" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded" data-modal-close>取消</button>
+            <button id="editGroupConfirm" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看分组模态框 -->
+  <div id="viewGroupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full mx-4">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium">查看分组</h3>
+          <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300" data-modal-close>
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">分组名称</div>
+            <div id="viewGroupName" class="text-gray-900 dark:text-gray-100"></div>
+          </div>
+          <div class="overflow-x-auto border rounded">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">账户名称</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">账户ID</th>
+                </tr>
+              </thead>
+              <tbody id="viewGroupAccountsTbody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+            </table>
+          </div>
+          <div class="flex justify-end">
+            <button class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded" data-modal-close>关闭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看流水抽屉（挂载新页面） -->
+  <div id="flowDrawer" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50 hidden modal">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-5xl h-full shadow-lg flex flex-col">
+      <div class="px-4 py-3 border-b flex items-center justify-between">
+        <div class="text-lg font-medium">查看流水</div>
+        <button id="flowDrawerClose" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <iframe id="flowDrawerFrame" class="flex-1 w-full" src=""></iframe>
+    </div>
+  </div>
+
   <script src="js/main.js"></script>
   <script>
     // 采集创建账户表单数据（含新增字段）
@@ -594,6 +848,27 @@
       const transactionListView = document.getElementById('transactionListView');
       const transactionMgmtView = document.getElementById('transactionMgmtView');
       const pageTitle = document.getElementById('pageTitle');
+      const btnCreateGroup = document.getElementById('btnCreateGroup');
+      const groupFilterName = document.getElementById('groupFilterName');
+      const groupFilterParent = document.getElementById('groupFilterParent');
+      const groupTbody = document.getElementById('groupAccountsTbody');
+      const groupNameInput = document.getElementById('groupNameInput');
+      const groupConfirm = document.getElementById('groupConfirm');
+      const groupListTbody = document.getElementById('groupListTbody');
+      const editGroupNameInput = document.getElementById('editGroupNameInput');
+      const editGroupFilterName = document.getElementById('editGroupFilterName');
+      const editGroupFilterParent = document.getElementById('editGroupFilterParent');
+      const editGroupTbody = document.getElementById('editGroupAccountsTbody');
+      const editGroupConfirm = document.getElementById('editGroupConfirm');
+      const viewGroupName = document.getElementById('viewGroupName');
+      const viewGroupAccountsTbody = document.getElementById('viewGroupAccountsTbody');
+      const groupStorageKey = 'accountGroups';
+      let groupList = [];
+      let currentEditGroupId = '';
+      const flowDrawer = document.getElementById('flowDrawer');
+      const flowDrawerFrame = document.getElementById('flowDrawerFrame');
+      const notifToggle = document.getElementById('notifToggle');
+      const notifDropdown = document.getElementById('notifDropdown');
 
       function setActiveNav(activeEl) {
         [navAccount, navProject, navProjectCreate, navReport, navRule, navPermissionMgmt, navClientProjects, navSystemManage, navSystemLogs, navTransactionList, navTransactionMgmt].forEach(el => {
@@ -602,6 +877,156 @@
         });
         if (activeEl) activeEl.classList.add('bg-blue-500','text-white');
       }
+
+      if (notifToggle && notifDropdown) {
+        notifToggle.addEventListener('click', function(e){
+          e.preventDefault();
+          notifDropdown.classList.toggle('hidden');
+        });
+      }
+
+      const groupAccountsData = [
+        { id:'AC-001', name:'集团总经理', parent:'-', phone:'13800000001' },
+        { id:'AC-002', name:'区域总经理', parent:'集团总经理', phone:'13800000002' },
+        { id:'AC-003', name:'星力展厅店-店长', parent:'区域总经理', phone:'13800000003' },
+        { id:'AC-006', name:'宝点数字体验店-店长', parent:'区域总经理', phone:'13800000004' }
+      ];
+      function loadGroupList(){
+        try{ groupList = JSON.parse(localStorage.getItem(groupStorageKey)||'[]'); }catch(e){ groupList=[]; }
+      }
+      function saveGroupList(){ localStorage.setItem(groupStorageKey, JSON.stringify(groupList)); }
+      function fmtNow(){
+        const d=new Date(); const p=n=>String(n).padStart(2,'0');
+        return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds());
+      }
+      function renderGroupList(){
+        if(!groupListTbody) return;
+        groupListTbody.innerHTML = (groupList||[]).map(g=>
+          `<tr>
+            <td class="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">${g.name}</td>
+            <td class="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">${g.createdAt||''}</td>
+            <td class="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">${(g.accountIds||[]).length}</td>
+            <td class="px-6 py-3 text-sm text-right">
+              <button class="text-blue-600 hover:text-blue-800 mr-3 grp-edit" data-id="${g.id}">编辑</button>
+              <button class="text-gray-700 hover:text-gray-900 mr-3 grp-view" data-id="${g.id}">查看</button>
+              <button class="text-red-600 hover:text-red-800 grp-del" data-id="${g.id}">删除</button>
+            </td>
+          </tr>`
+        ).join('');
+        groupListTbody.querySelectorAll('.grp-edit').forEach(b=>{
+          b.onclick=function(){ openEditGroup(this.getAttribute('data-id')); };
+        });
+        groupListTbody.querySelectorAll('.grp-view').forEach(b=>{
+          b.onclick=function(){ openViewGroup(this.getAttribute('data-id')); };
+        });
+        groupListTbody.querySelectorAll('.grp-del').forEach(b=>{
+          b.onclick=function(){ const id=this.getAttribute('data-id'); if(confirm('确认删除该分组吗？')){ groupList = (groupList||[]).filter(x=>x.id!==id); saveGroupList(); renderGroupList(); } };
+        });
+      }
+      function renderEditGroupAccounts(prechecked){
+        const name=(editGroupFilterName?.value||'').trim();
+        const parent=(editGroupFilterParent?.value||'').trim();
+        const rows = groupAccountsData.filter(x => (!name || (x.name||'').includes(name)) && (!parent || (x.parent||'').includes(parent)));
+        if(editGroupTbody){
+          editGroupTbody.innerHTML = rows.map(x=>
+            `<tr>
+              <td class="px-4 py-2"><input type="checkbox" class="edit-grp-check" data-id="${x.id}" ${prechecked && prechecked.includes(x.id) ? 'checked' : ''}></td>
+              <td class="px-4 py-2 text-sm">${x.name}</td>
+              <td class="px-4 py-2 text-sm">${x.id}</td>
+              <td class="px-4 py-2 text-sm">${x.parent}</td>
+              <td class="px-4 py-2 text-sm">${x.phone}</td>
+            </tr>`
+          ).join('');
+        }
+      }
+      function openEditGroup(id){
+        const g=(groupList||[]).find(x=>x.id===id);
+        currentEditGroupId=id;
+        if(editGroupNameInput) editGroupNameInput.value=g?g.name:'';
+        if(editGroupFilterName) editGroupFilterName.value='';
+        if(editGroupFilterParent) editGroupFilterParent.value='';
+        renderEditGroupAccounts(g?g.accountIds:[]);
+        const m=document.getElementById('editGroupModal'); if(m){ m.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
+      }
+      function openViewGroup(id){
+        const g=(groupList||[]).find(x=>x.id===id);
+        if(viewGroupName) viewGroupName.textContent=g?g.name:'';
+        if(viewGroupAccountsTbody){
+          const rows=(g?.accounts||[]).map(a=>
+            `<tr><td class="px-4 py-2 text-sm">${a.name}</td><td class="px-4 py-2 text-sm">${a.id}</td></tr>`
+          ).join('');
+          viewGroupAccountsTbody.innerHTML=rows;
+        }
+        const m=document.getElementById('viewGroupModal'); if(m){ m.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
+      }
+      function renderGroupAccounts(){
+        const name = (groupFilterName?.value||'').trim();
+        const parent = (groupFilterParent?.value||'').trim();
+        const rows = groupAccountsData.filter(x => (!name || (x.name||'').includes(name)) && (!parent || (x.parent||'').includes(parent)));
+        if(groupTbody){
+          groupTbody.innerHTML = rows.map(x => `
+            <tr>
+              <td class="px-4 py-2"><input type="checkbox" class="grp-check" data-id="${x.id}" data-name="${x.name}"></td>
+              <td class="px-4 py-2 text-sm">${x.name}</td>
+              <td class="px-4 py-2 text-sm">${x.id}</td>
+              <td class="px-4 py-2 text-sm">${x.parent}</td>
+              <td class="px-4 py-2 text-sm">${x.phone}</td>
+            </tr>
+          `).join('');
+        }
+      }
+      function initGroupModal(){
+        if(groupNameInput) groupNameInput.value='';
+        if(groupFilterName) groupFilterName.value='';
+        if(groupFilterParent) groupFilterParent.value='';
+        renderGroupAccounts();
+      }
+      if(btnCreateGroup){ btnCreateGroup.addEventListener('click', initGroupModal); }
+      if(groupFilterName){ groupFilterName.addEventListener('input', renderGroupAccounts); }
+      if(groupFilterParent){ groupFilterParent.addEventListener('input', renderGroupAccounts); }
+      if(groupConfirm){ groupConfirm.addEventListener('click', function(){
+        const name = (groupNameInput?.value||'').trim();
+        if(!name){ alert('请填写分组名称'); return; }
+        const checks = document.querySelectorAll('#groupAccountsTbody .grp-check:checked');
+        if(!checks.length){ alert('请选择至少一个账户'); return; }
+        const ids = Array.from(checks).map(ch => ch.getAttribute('data-id'));
+        const accounts = ids.map(id => groupAccountsData.find(x=>x.id===id)).filter(Boolean);
+        const g={ id:'G'+Date.now(), name, createdAt: fmtNow(), accountIds: ids, accounts };
+        groupList.push(g); saveGroupList(); renderGroupList();
+        const modal = document.getElementById('createGroupModal');
+        if(modal){ modal.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
+      }); }
+      if(editGroupConfirm){ editGroupConfirm.addEventListener('click', function(){
+        const name=(editGroupNameInput?.value||'').trim();
+        if(!name){ alert('请填写分组名称'); return; }
+        const checks = document.querySelectorAll('#editGroupAccountsTbody .edit-grp-check:checked');
+        const ids = Array.from(checks).map(ch => ch.getAttribute('data-id'));
+        const accounts = ids.map(id => groupAccountsData.find(x=>x.id===id)).filter(Boolean);
+        groupList = (groupList||[]).map(x=> x.id===currentEditGroupId ? { ...x, name, accountIds: ids, accounts } : x);
+        saveGroupList(); renderGroupList();
+        const m=document.getElementById('editGroupModal'); if(m){ m.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
+      }); }
+      if(editGroupFilterName){ editGroupFilterName.addEventListener('input', function(){
+        const g=(groupList||[]).find(x=>x.id===currentEditGroupId);
+        renderEditGroupAccounts(g?g.accountIds:[]);
+      }); }
+      if(editGroupFilterParent){ editGroupFilterParent.addEventListener('input', function(){
+        const g=(groupList||[]).find(x=>x.id===currentEditGroupId);
+        renderEditGroupAccounts(g?g.accountIds:[]);
+      }); }
+      function openFlow(name){
+        if(!flowDrawer || !flowDrawerFrame) return;
+        const url = 'account-flow-drawer.html?accountName=' + encodeURIComponent(name||'');
+        flowDrawerFrame.src = url;
+        flowDrawer.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+      }
+      document.querySelectorAll('.btn-view-flow').forEach(btn=>{
+        btn.addEventListener('click', function(){
+          const name = this.getAttribute('data-account-name') || '';
+          openFlow(name);
+        });
+      });
 
       function hideAllViews(){
         [accountWrap, projectView, reportView, ruleView, projectCreateView, permissionView, clientProjectsView, systemManageView, systemLogsView, transactionListView, transactionMgmtView].forEach(v=>{
@@ -714,6 +1139,17 @@
       if (navSystemLogs) navSystemLogs.addEventListener('click', function(e){ e.preventDefault(); showSystemLogs(); });
       if (navTransactionList) navTransactionList.addEventListener('click', function(e){ e.preventDefault(); showTransactionList(); });
       if (navTransactionMgmt) navTransactionMgmt.addEventListener('click', function(e){ e.preventDefault(); showTransactionMgmt(); });
+      loadGroupList();
+      if(!(groupList||[]).length){
+        const toAccounts = ids => ids.map(id => groupAccountsData.find(x=>x.id===id)).filter(Boolean);
+        groupList = [
+          { id:'G'+Date.now()+'A', name:'管理层组', createdAt: fmtNow(), accountIds:['AC-001','AC-002'], accounts: toAccounts(['AC-001','AC-002']) },
+          { id:'G'+Date.now()+'B', name:'直营店店长组', createdAt: fmtNow(), accountIds:['AC-003','AC-006'], accounts: toAccounts(['AC-003','AC-006']) },
+          { id:'G'+Date.now()+'C', name:'区域负责人组', createdAt: fmtNow(), accountIds:['AC-002'], accounts: toAccounts(['AC-002']) },
+        ];
+        saveGroupList();
+      }
+      renderGroupList();
     });
   </script>
 </body>

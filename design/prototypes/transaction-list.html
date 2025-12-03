@@ -8,15 +8,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-4">
-  <div class="max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold">交易列表</h1>
-      <div class="space-x-2">
-        <button class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"><i class="fas fa-sync mr-2"></i>刷新</button>
-        <button class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded"><i class="fas fa-download mr-2"></i>导出</button>
-      </div>
+<body class="p-4">
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-bold">交易列表</h1>
+    <div class="space-x-2">
+      <button class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"><i class="fas fa-sync mr-2"></i>刷新</button>
+      <button class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded"><i class="fas fa-download mr-2"></i>导出</button>
     </div>
+  </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
       <div class="flex border-b border-gray-200 dark:border-gray-700">
@@ -26,24 +25,24 @@
 
       <div id="tab-flow" class="p-6 tab-content">
         <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg mb-4">
-          <div class="flex flex-wrap gap-3 items-center">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 items-center">
             <div class="inline-flex items-center border rounded-lg overflow-hidden">
               <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">交易号</span>
               <input type="text" class="px-3 py-2 text-sm focus:outline-none bg-white dark:bg-gray-700" placeholder="如：TX202501010001">
             </div>
-            <div class="inline-flex items-center border rounded-lg overflow-hidden">
+            <div class="inline-flex items-center border rounded-lg overflow-hidden md:col-span-2 xl:col-span-2">
               <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">交易时间</span>
-              <input type="datetime-local" class="px-2 py-2 text-sm focus:outline-none bg-white dark:bg-gray-700" />
+              <input type="datetime-local" class="px-2 h-10 text-sm focus:outline-none bg-white dark:bg-gray-700" />
               <span class="px-2 text-gray-400">-</span>
-              <input type="datetime-local" class="px-2 py-2 text-sm focus:outline-none bg-white dark:bg-gray-700 border-l" />
+              <input type="datetime-local" class="px-2 h-10 text-sm focus:outline-none bg-white dark:bg-gray-700 border-l" />
             </div>
             <div class="inline-flex items-center border rounded-lg overflow-hidden">
-              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">交易账号</span>
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">转入账号</span>
               <input type="text" class="px-3 py-2 text-sm focus:outline-none bg-white dark:bg-gray-700" placeholder="账户名/ID">
             </div>
-            <div class="inline-flex items-center border rounded-lg overflow-hidden">
+            <div class="inline-flex items-center border rounded-lg overflow-hidden md:col-span-2 xl:col-span-4">
               <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">交易方式</span>
-              <select class="px-3 py-2 text-sm focus:outline-none bg-white dark:bg-gray-700">
+              <select class="px-3 h-10 text-sm focus:outline-none bg-white dark:bg-gray-700">
                 <option>全部</option>
                 <option>自动入账</option>
                 <option>支付宝</option>
@@ -51,38 +50,68 @@
                 <option>银行卡</option>
               </select>
             </div>
-            <div class="inline-flex items-center gap-2 ml-auto">
+            <div class="inline-flex items-center border rounded-lg overflow-hidden">
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">交易状态</span>
+              <select class="px-3 py-2 text-sm focus:outline-none bg-white dark:bg-gray-700">
+                <option>全部</option>
+                <option>自动交易成功</option>
+                <option>交易失败</option>
+                <option>手动交易成功</option>
+              </select>
+            </div>
+            <div class="inline-flex items-center gap-2 md:col-span-2 xl:col-span-1 md:justify-end">
               <button class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"><i class="fas fa-search mr-2"></i>搜索</button>
               <button class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded"><i class="fas fa-undo mr-2"></i>重置</button>
             </div>
           </div>
         </div>
 
-        <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border">
+        <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border relative">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-900">
+            <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">交易号</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">交易时间</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">交易账号</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">项目名称</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">交易方式</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">交易号</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">交易时间</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">转入账号</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">项目名称</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">交易方式</th>
+                <th class="px-6 py-3 text-right text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">流水金额</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">交易状态</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">操作栏</th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr>
-                <td class="px-6 py-3 text-sm font-mono">TX202511260001</td>
-                <td class="px-6 py-3 text-sm">2025-11-26 10:30</td>
-                <td class="px-6 py-3 text-sm">星力展厅店-店长</td>
-                <td class="px-6 py-3 text-sm">星力展厅店营收</td>
-                <td class="px-6 py-3 text-sm">微信</td>
+              <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-tx-id="TX202511260001" data-status="success" data-accounts='[{"name":"星力展厅店-店长","amount":0},{"name":"平台-服务费","amount":0}]'>
+                <td class="px-6 py-3 text-xs whitespace-nowrap font-mono">TX202511260001</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">2025-11-26 10:30</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">星力展厅店-店长</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">星力展厅店营收</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">微信</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap text-right">¥ 1,280.00</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap"><span class="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-700">自动交易成功</span></td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <button class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded btn-view"><i class="fas fa-eye mr-1"></i>查看</button>
+                    <button class="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded btn-export"><i class="fas fa-download mr-1"></i>导出</button>
+                  </div>
+                </td>
               </tr>
-              <tr>
-                <td class="px-6 py-3 text-sm font-mono">TX202511250128</td>
-                <td class="px-6 py-3 text-sm">2025-11-25 18:42</td>
-                <td class="px-6 py-3 text-sm">宝点数字体验店-店长</td>
-                <td class="px-6 py-3 text-sm">宝点数字体验店小程序营收</td>
-                <td class="px-6 py-3 text-sm">支付宝</td>
+              <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-tx-id="TX202511250128" data-status="failed" data-accounts='[{"name":"宝点数字体验店-店长","amount":0},{"name":"平台-服务费","amount":0}]'>
+                <td class="px-6 py-3 text-xs whitespace-nowrap font-mono">TX202511250128</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">2025-11-25 18:42</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">宝点数字体验店-店长</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">宝点数字体验店小程序营收</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">支付宝</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap text-right">¥ 640.00</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap"><span class="inline-flex items-center px-2 py-1 rounded bg-red-100 text-red-700">交易失败</span></td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <button class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded btn-view"><i class="fas fa-eye mr-1"></i>查看</button>
+                    <button class="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded btn-export"><i class="fas fa-download mr-1"></i>导出</button>
+                    <button class="px-2 py-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded btn-notify"><i class="fas fa-bell mr-1"></i>通知提醒</button>
+                    <button class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded btn-alloc"><i class="fas fa-hand-holding-usd mr-1"></i>手动交易</button>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -127,20 +156,81 @@
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">交易号</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">交易时间</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">交易账号</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">项目名称</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">交易方式</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">交易号</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">交易时间</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">转入账号</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">转出账号</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">项目名称</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">交易方式</th>
+                <th class="px-6 py-3 text-right text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">流水金额</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">交易状态</th>
+                <th class="px-6 py-3 text-left text-xs whitespace-nowrap font-medium text-gray-500 dark:text-gray-400">操作栏</th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr>
-                <td class="px-6 py-3 text-sm font-mono">DP202511200012</td>
-                <td class="px-6 py-3 text-sm">2025-11-20 14:12</td>
-                <td class="px-6 py-3 text-sm">集团总经理保证金账户</td>
-                <td class="px-6 py-3 text-sm">—</td>
-                <td class="px-6 py-3 text-sm">自动入账</td>
+              <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-tx-id="DP202511200012" data-status="success">
+                <td class="px-6 py-3 text-xs whitespace-nowrap font-mono">DP202511200012</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">2025-11-20 14:12</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">集团总经理保证金账户</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">平台-保证金池</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">—</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">自动入账</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap text-right">¥ 5,000.00</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap"><span class="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-700">自动交易成功</span></td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <button class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded btn-view"><i class="fas fa-eye mr-1"></i>查看</button>
+                    <button class="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded btn-export"><i class="fas fa-download mr-1"></i>导出</button>
+                  </div>
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-tx-id="DP202511210045" data-status="failed" data-accounts='[{"name":"集团总经理保证金账户","amount":0},{"name":"平台-保证金池","amount":0}]'>
+                <td class="px-6 py-3 text-xs whitespace-nowrap font-mono">DP202511210045</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">2025-11-21 09:33</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">集团总经理保证金账户</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">平台-保证金池</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">华东区域保证金结算</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">微信</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap text-right">—</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap"><span class="inline-flex items-center px-2 py-1 rounded bg-red-100 text-red-700">交易失败</span></td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <button class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded btn-view"><i class="fas fa-eye mr-1"></i>查看</button>
+                    <button class="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded btn-export"><i class="fas fa-download mr-1"></i>导出</button>
+                  </div>
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-tx-id="DP202511221008" data-status="success">
+                <td class="px-6 py-3 text-xs whitespace-nowrap font-mono">DP202511221008</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">2025-11-22 10:08</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">美团服务商保证金账户</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">集团保证金池</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">美团三方服务费用</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">支付宝</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap text-right">¥ 2,000.00</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap"><span class="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-700">自动交易成功</span></td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <button class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded btn-view"><i class="fas fa-eye mr-1"></i>查看</button>
+                    <button class="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded btn-export"><i class="fas fa-download mr-1"></i>导出</button>
+                  </div>
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-tx-id="DP202511230333" data-status="failed" data-accounts='[{"name":"宝点数字体验店-保证金","amount":0},{"name":"平台-保证金池","amount":0}]'>
+                <td class="px-6 py-3 text-xs whitespace-nowrap font-mono">DP202511230333</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">2025-11-23 03:33</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">宝点数字体验店-保证金</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">平台-保证金池</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">宝点数字体验店畅玩卡营收</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">银行卡</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap text-right">—</td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap"><span class="inline-flex items-center px-2 py-1 rounded bg-red-100 text-red-700">交易失败</span></td>
+                <td class="px-6 py-3 text-xs whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <button class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded btn-view"><i class="fas fa-eye mr-1"></i>查看</button>
+                    <button class="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded btn-export"><i class="fas fa-download mr-1"></i>导出</button>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -149,6 +239,58 @@
     </div>
   </div>
 
+  <div id="manualAllocModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-lg shadow-lg p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-lg font-medium">手动分账</h4>
+        <button id="manualAllocClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="manualAllocList" class="space-y-2"></div>
+      <div class="flex items-center justify-between mt-3">
+        <div id="manualAllocSum" class="text-sm text-gray-700 dark:text-gray-300">合计：¥ 0.00</div>
+        <div class="space-x-2">
+          <button id="manualAllocCancel" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded">取消</button>
+          <button id="manualAllocConfirm" class="px-3 py-1 bg-blue-600 text-white rounded">确定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="js/main.js"></script>
+  <script>
+  (function(){
+    var modal=document.getElementById('manualAllocModal');
+    var list=document.getElementById('manualAllocList');
+    var sumEl=document.getElementById('manualAllocSum');
+    var currentRow=null;
+    function openModal(row){
+      currentRow=row;
+      var accs=[];try{accs=JSON.parse(row.getAttribute('data-accounts')||'[]')||[]}catch(e){accs=[]}
+      list.innerHTML=accs.map(function(a,i){return '<div class="flex items-center justify-between gap-3"><span class="text-sm">'+a.name+'</span><div class="inline-flex items-center border rounded overflow-hidden"><span class="px-2 text-sm bg-gray-100 text-gray-600">¥</span><input type="number" step="0.01" min="0" class="px-2 py-1 w-32 text-right bg-white dark:bg-gray-700 alloc-input" data-index="'+i+'" value="'+(a.amount||0)+'"></div></div>'}).join('');
+      updateSum();
+      modal.classList.remove('hidden');
+    }
+    function closeModal(){modal.classList.add('hidden'); currentRow=null; list.innerHTML=''; sumEl.textContent='合计：¥ 0.00';}
+    function updateSum(){var inputs=list.querySelectorAll('.alloc-input'); var s=0; inputs.forEach(function(inp){var v=parseFloat(inp.value||'0'); if(!isNaN(v)) s+=v;}); sumEl.textContent='合计：¥ '+s.toFixed(2); }
+    function markAmountColor(tr){var len=tr && tr.children ? tr.children.length : 0; var idx=len>0 ? len-3 : -1; var cell=idx>=0 ? tr.children[idx] : null; if(!cell) return; var txt=(cell.textContent||'').replace(/\s/g,''); if(txt.indexOf('-')>-1){cell.classList.add('text-red-600');}else{cell.classList.remove('text-red-600');}}
+    function ensureFailedActions(tr){var status=tr.getAttribute('data-status'); if(status!=='failed') return; var len=tr.children.length; var actionsCell=tr.children[len-1]; if(!actionsCell) return; var wrap=actionsCell.querySelector('div'); if(!wrap){wrap=document.createElement('div'); wrap.className='flex items-center gap-2'; actionsCell.appendChild(wrap);} var notifyBtn=tr.querySelector('.btn-notify'); if(!notifyBtn){notifyBtn=document.createElement('button'); notifyBtn.className='px-2 py-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded btn-notify'; notifyBtn.innerHTML='<i class="fas fa-bell mr-1"></i>通知提醒'; wrap.appendChild(notifyBtn);} notifyBtn.onclick=function(){alert('已通知相关人员处理交易失败');}; var manualBtn=tr.querySelector('.btn-alloc'); if(!manualBtn){manualBtn=document.createElement('button'); manualBtn.className='px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded btn-alloc'; manualBtn.innerHTML='<i class="fas fa-hand-holding-usd mr-1"></i>手动交易'; wrap.appendChild(manualBtn);} manualBtn.onclick=function(){openModal(tr);};}
+    document.querySelectorAll('#tab-flow tbody tr').forEach(function(tr){
+      var status=tr.getAttribute('data-status');
+      var allocBtn=tr.querySelector('.btn-alloc');
+      var viewBtn=tr.querySelector('.btn-view');
+      var exportBtn=tr.querySelector('.btn-export');
+      markAmountColor(tr);
+      ensureFailedActions(tr);
+      if(allocBtn){ allocBtn.onclick=function(){ openModal(tr); }; }
+      if(viewBtn){ viewBtn.onclick=function(){ var tx=tr.getAttribute('data-tx-id')||''; alert('查看交易：'+tx); }; }
+      if(exportBtn){ exportBtn.onclick=function(){ var data={ id:tr.getAttribute('data-tx-id'), time:tr.children[1].textContent.trim(), inAccount:tr.children[2].textContent.trim(), project:tr.children[3].textContent.trim(), method:tr.children[4].textContent.trim(), amount:tr.children[5].textContent.trim(), status:tr.children[6].textContent.trim() }; var blob=new Blob([JSON.stringify(data)],{type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(data.id||'tx')+'.json'; a.click(); }; }
+    });
+    list.addEventListener('input',function(e){ if(e.target && e.target.classList.contains('alloc-input')) updateSum(); });
+    document.getElementById('manualAllocClose').onclick=closeModal;
+    document.getElementById('manualAllocCancel').onclick=closeModal;
+    document.getElementById('manualAllocConfirm').onclick=function(){ if(!currentRow) return; try{ var accs=JSON.parse(currentRow.getAttribute('data-accounts')||'[]')||[]; var inputs=list.querySelectorAll('.alloc-input'); inputs.forEach(function(inp){ var idx=parseInt(inp.getAttribute('data-index'),10)||0; var v=parseFloat(inp.value||'0'); if(accs[idx]) accs[idx].amount=isNaN(v)?0:v; }); currentRow.setAttribute('data-accounts', JSON.stringify(accs)); var len=currentRow.children.length; var statusCell=currentRow.children[len-2]; if(statusCell){ statusCell.innerHTML='<span class="inline-flex items-center px-2 py-1 rounded bg-yellow-100 text-yellow-700">手动交易成功</span>'; } var allocBtn=currentRow.querySelector('.btn-alloc'); if(allocBtn){ allocBtn.remove(); } closeModal(); }catch(e){ closeModal(); } };
+    document.querySelectorAll('#tab-deposit tbody tr').forEach(function(tr){ var status=tr.getAttribute('data-status'); var viewBtn=tr.querySelector('.btn-view'); var exportBtn=tr.querySelector('.btn-export'); markAmountColor(tr); ensureFailedActions(tr); if(viewBtn){ viewBtn.onclick=function(){ var tx=tr.getAttribute('data-tx-id')||''; alert('查看交易：'+tx); }; } if(exportBtn){ exportBtn.onclick=function(){ var len=tr.children.length; var data={ id:tr.getAttribute('data-tx-id'), time:tr.children[1].textContent.trim(), inAccount:tr.children[2].textContent.trim(), outAccount:tr.children[3].textContent.trim(), project:tr.children[4].textContent.trim(), method:tr.children[5].textContent.trim(), amount:tr.children[len-3].textContent.trim(), status:tr.children[len-2].textContent.trim() }; var blob=new Blob([JSON.stringify(data)],{type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(data.id||'dp')+'.json'; a.click(); }; } });
+  })();
+  </script>
 </body>
 </html>

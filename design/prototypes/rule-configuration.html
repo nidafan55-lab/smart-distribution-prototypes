@@ -91,6 +91,26 @@
               <div id="simpleFixedSettlementFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3"></div>
             </div>
           </div>
+          <div class="text-sm font-medium text-gray-700">上限配置</div>
+          <div class="flex items-center gap-3">
+            <label class="inline-flex items-center gap-2"><input id="simpleCapToggle" type="checkbox" class="h-4 w-4">启用上限配置</label>
+          </div>
+          <div id="simpleCapSection" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">限定额度</span>
+              <select id="simpleCapType" class="px-3 py-2 text-sm focus:outline-none">
+                <option value="percentage">百分比</option>
+                <option value="fixed">定额</option>
+              </select>
+              <input id="simpleCapValue" type="number" step="0.01" min="0" class="px-3 py-2 text-sm focus:outline-none flex-1" placeholder="请输入数值">
+              <span id="simpleCapUnit" class="px-3 py-2 text-sm text-gray-600 bg-gray-50">%</span>
+            </div>
+            <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+              <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">剩余款项汇入账户</span>
+              <button id="simpleCapSelectAccount" class="px-3 py-2 text-sm bg-blue-600 text-white">指定账户</button>
+              <span id="simpleCapAccountLabel" class="px-3 py-2 text-sm text-gray-700">未指定</span>
+            </div>
+          </div>
         </div>
         <div id="advancedRuleSection">
         <div class="text-sm font-medium text-gray-700">基础信息</div>
@@ -177,16 +197,65 @@
     </div>
   </div>
 
+  <!-- 选择汇入账户 模态框 -->
+  <div id="capAccountBackdrop" class="modal-backdrop">
+    <div class="modal" style="max-width: 800px; width: 800px;">
+      <div class="p-6 border-b flex items-center justify-between">
+        <h2 class="text-xl font-semibold">选择汇入账户</h2>
+        <button id="capAccClose" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+            <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">账户名称</span>
+            <input id="capFilterName" class="px-3 py-2 text-sm focus:outline-none flex-1" placeholder="请输入账户名称" />
+          </div>
+          <div class="inline-flex items-center border rounded-lg overflow-hidden w-full">
+            <span class="px-3 py-2 bg-gray-100 text-sm text-gray-600">账户分组</span>
+            <select id="capFilterGroup" class="px-3 py-2 text-sm focus:outline-none flex-1">
+              <option value="">全部</option>
+              <option value="直营店店长">直营店店长</option>
+              <option value="区域总经理">区域总经理</option>
+            </select>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">选择</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">账户名称</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">账户分组</th>
+              </tr>
+            </thead>
+            <tbody id="capAccountList"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="p-6 border-t flex justify-end space-x-3">
+        <button id="capAccCancel" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded">取消</button>
+        <button id="capAccConfirm" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">确定</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // 数据模型
     const storageKey = 'ruleConfigRules';
     let rules = [];
     let editIndex = null; // null 表示新增
+    let simpleCapAccountName = '';
+    const capAccountData = [
+      { name: '星力展厅店店长', group: '直营店店长' },
+      { name: '华东区域负责人王总', group: '区域总经理' },
+      { name: '华北区域负责人李总', group: '区域总经理' },
+      { name: '宝点数字体验店店长', group: '直营店店长' }
+    ];
 
     function loadRules(){
       try { rules = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch(e){ rules = []; }
     }
-    function saveRules(){ localStorage.setItem(storageKey, JSON.stringify(rules)); }
+  function saveRules(){ localStorage.setItem(storageKey, JSON.stringify(rules)); }
 
     // 文本描述
     function settlementTextGeneric(typeLabel, settlement){
@@ -219,6 +288,7 @@
             <div>
               <h3 class="text-lg font-semibold">${rule.name || '未命名规则'}</h3>
               <p class="text-sm text-gray-500 mt-1">保证金额度：按分账金额的 ${Number(rule.minMultiplier || 0)} 倍到 ${Number(rule.maxMultiplier || 0)} 倍</p>
+              <p class="text-sm text-gray-500 mt-1">上限配置：${rule.capEnabled ? `限定额度（${rule.capType==='percentage'?'百分比':'定额'}）：${rule.capValue||0}；汇入账户：${rule.capAccount||'未指定'}` : '未启用'}</p>
             </div>
           </div>
           <div class="mt-3 text-sm">
@@ -282,6 +352,22 @@
         const sfSel=document.getElementById('simpleFixedSettlementType');
         if (scSel) scSel.onchange=(e)=>renderSimpleCurrentSettlementFields(e.target.value, null);
         if (sfSel) sfSel.onchange=(e)=>renderSimpleFixedSettlementFields(e.target.value, null);
+        const capT=document.getElementById('simpleCapToggle');
+        const capS=document.getElementById('simpleCapSection');
+        const capType=document.getElementById('simpleCapType');
+        const capVal=document.getElementById('simpleCapValue');
+        const capUnit=document.getElementById('simpleCapUnit');
+        const capBtn=document.getElementById('simpleCapSelectAccount');
+        const capLab=document.getElementById('simpleCapAccountLabel');
+        if(capT && capS){ capT.checked=false; capS.classList.add('hidden'); }
+        if(capType) capType.value='percentage';
+        if(capVal) capVal.value='';
+        simpleCapAccountName='';
+        if(capLab) capLab.textContent='未指定';
+        if(capUnit) capUnit.textContent='%';
+        if(capT){ capT.onchange=function(){ if(this.checked){ capS.classList.remove('hidden'); } else { capS.classList.add('hidden'); } }; }
+        if(capType){ capType.onchange=function(){ if(capUnit){ capUnit.textContent = (this.value==='fixed') ? '¥' : '%'; } }; }
+        if(capBtn){ capBtn.onclick=function(){ openCapAccountModal(); }; }
         return;
       }
 
@@ -481,6 +567,45 @@
       return s;
     }
 
+    function renderCapAccountList(){
+      const name=(document.getElementById('capFilterName')?.value||'').trim();
+      const group=document.getElementById('capFilterGroup')?.value||'';
+      const tbody=document.getElementById('capAccountList');
+      if(!tbody) return;
+      const list=capAccountData.filter(a=>{
+        const okName = name ? a.name.includes(name) : true;
+        const okGroup = group ? a.group===group : true;
+        return okName && okGroup;
+      });
+      tbody.innerHTML=list.map((a)=>
+        `<tr class="divide-y">
+          <td class="px-4 py-2"><input type="checkbox" class="cap-acc-check" data-name="${a.name}" data-group="${a.group}"></td>
+          <td class="px-4 py-2 text-sm">${a.name}</td>
+          <td class="px-4 py-2 text-sm">${a.group}</td>
+        </tr>`
+      ).join('');
+      tbody.querySelectorAll('.cap-acc-check').forEach(ch=>{
+        ch.addEventListener('change',function(){
+          if(this.checked){
+            tbody.querySelectorAll('.cap-acc-check').forEach(o=>{ if(o!==this) o.checked=false; });
+          }
+        });
+      });
+    }
+    function openCapAccountModal(){
+      const nameEl=document.getElementById('capFilterName');
+      const groupEl=document.getElementById('capFilterGroup');
+      if(nameEl) nameEl.value='';
+      if(groupEl) groupEl.value='';
+      renderCapAccountList();
+      const backdrop=document.getElementById('capAccountBackdrop');
+      if(backdrop) backdrop.style.display='flex';
+    }
+    function closeCapAccountModal(){
+      const backdrop=document.getElementById('capAccountBackdrop');
+      if(backdrop) backdrop.style.display='none';
+    }
+
     // 保存表单
     function onSave(){
       const simple = document.getElementById('simpleNewRuleSection');
@@ -498,6 +623,16 @@
         const fixed = collectSimpleFixedSettlement(simpleFixType);
         if (!name){ alert('请填写规则名称'); return; }
         const payload = { name, projectType, effectiveTime, expireTime, ledgerScopeType, current, fixed };
+        const capToggle=document.getElementById('simpleCapToggle');
+        const capType=document.getElementById('simpleCapType');
+        const capVal=document.getElementById('simpleCapValue');
+        const capEnabled=!!(capToggle && capToggle.checked);
+        if(capEnabled){
+          payload.capEnabled=true;
+          payload.capType=(capType && capType.value)||'percentage';
+          payload.capValue=parseFloat(capVal && capVal.value ? capVal.value : '0')||0;
+          payload.capAccount=simpleCapAccountName||'';
+        }
         rules.push(payload);
         saveRules(); renderRules(); closeModal();
         return;
@@ -538,6 +673,27 @@
       document.getElementById('ruleTypePrimary').addEventListener('change', (e) => applyRuleTypeVisibility(e.target.value));
       document.getElementById('currentSettlementType').addEventListener('change', (e) => renderCurrentSettlementFields(e.target.value, null));
       document.getElementById('fixedSettlementType').addEventListener('change', (e) => renderFixedSettlementFields(e.target.value, null));
+
+      const capName=document.getElementById('capFilterName');
+      const capGrp=document.getElementById('capFilterGroup');
+      const capClose=document.getElementById('capAccClose');
+      const capCancel=document.getElementById('capAccCancel');
+      const capConfirm=document.getElementById('capAccConfirm');
+      const capLab=document.getElementById('simpleCapAccountLabel');
+      if(capName){ capName.addEventListener('input', renderCapAccountList); }
+      if(capGrp){ capGrp.addEventListener('change', renderCapAccountList); }
+      if(capClose){ capClose.onclick=closeCapAccountModal; }
+      if(capCancel){ capCancel.onclick=closeCapAccountModal; }
+      if(capConfirm){ capConfirm.onclick=function(){
+        const tbody=document.getElementById('capAccountList');
+        if(!tbody){ closeCapAccountModal(); return; }
+        const checked=tbody.querySelector('.cap-acc-check:checked');
+        if(!checked){ alert('请选择一个账户'); return; }
+        const nm=checked.getAttribute('data-name')||'';
+        simpleCapAccountName=nm;
+        if(capLab) capLab.textContent = simpleCapAccountName ? ('已指定：'+simpleCapAccountName) : '未指定';
+        closeCapAccountModal();
+      }; }
 
       // 迁移旧数据结构（仅有单一 accountType/settlement 的情形）
       rules = rules.map(r => {
